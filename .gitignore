@@ -205,3 +205,14 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+node_modules/
+
+# Tresto specific
+.trestorc
+tests/generated/
+*.log
+
+# Playwright
+test-results/
+playwright-report/
