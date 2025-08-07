@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import os
-from typing import List, Any, AsyncIterator, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
 from rich.console import Console
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
     from langchain_anthropic import ChatAnthropic
 
 from .base import AIConnector, ChatMessage, GenerationResult
@@ -20,7 +23,7 @@ class AnthropicConnector(AIConnector):
     def __init__(self, model_name: str = "claude-3-5-sonnet-20241022", **kwargs: Any) -> None:
         """Initialize the Anthropic connector."""
         super().__init__(model_name, **kwargs)
-        self._client: Optional[ChatAnthropic] = None
+        self._client: ChatAnthropic | None = None
 
     @property
     def client(self) -> ChatAnthropic:
@@ -41,14 +44,14 @@ class AnthropicConnector(AIConnector):
 
     async def generate(
         self,
-        messages: List[ChatMessage],
+        messages: list[ChatMessage],
         temperature: float = 0.1,
         max_tokens: int = 4000,
         **kwargs: Any,
     ) -> GenerationResult:
         """Generate a response from Claude."""
         try:
-            from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+            from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
             # Convert our messages to langchain format
             lc_messages = []
@@ -71,7 +74,9 @@ class AnthropicConnector(AIConnector):
             return GenerationResult(
                 content=response.content,
                 model=self.model_name,
-                tokens_used=response.usage_metadata.get("total_tokens") if hasattr(response, "usage_metadata") else None,
+                tokens_used=response.usage_metadata.get("total_tokens")
+                if hasattr(response, "usage_metadata")
+                else None,
                 finish_reason="completed",
             )
 
@@ -81,14 +86,14 @@ class AnthropicConnector(AIConnector):
 
     async def stream_generate(
         self,
-        messages: List[ChatMessage],
+        messages: list[ChatMessage],
         temperature: float = 0.1,
         max_tokens: int = 4000,
         **kwargs: Any,
     ) -> AsyncIterator[str]:
         """Stream generate a response from Claude."""
         try:
-            from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+            from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
             # Convert messages
             lc_messages = []
@@ -124,7 +129,6 @@ class AnthropicConnector(AIConnector):
         """Maximum tokens for Claude models."""
         if "claude-3-5" in self.model_name:
             return 200_000
-        elif "claude-3" in self.model_name:
+        if "claude-3" in self.model_name:
             return 200_000
-        else:
-            return 100_000
+        return 100_000

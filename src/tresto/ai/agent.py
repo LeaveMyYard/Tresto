@@ -3,16 +3,18 @@
 from __future__ import annotations
 
 import json
-from typing import Dict, Any, List, TYPE_CHECKING
-from rich.console import Console
+from typing import TYPE_CHECKING, Any
+
 from jinja2 import Template
+from rich.console import Console
 
 if TYPE_CHECKING:
+    from tresto.core.config import TrestoConfig
+
     from .connectors.base import AIConnector
 
-from ..core.config import TrestoConfig
-from .connectors.factory import ConnectorFactory
 from .connectors.base import ChatMessage
+from .connectors.factory import ConnectorFactory
 
 console = Console()
 
@@ -45,7 +47,7 @@ class TestGenerationAgent:
                 else:
                     console.print("[red]No AI connectors available. Please set API keys.[/red]")
 
-        except Exception as e:
+        except (ValueError, ImportError, OSError) as e:
             console.print(f"[red]Error setting up AI connector: {e}[/red]")
             self.connector = None
 
@@ -53,7 +55,7 @@ class TestGenerationAgent:
         self,
         test_name: str,
         description: str,
-        recording_data: Dict[str, Any],
+        recording_data: dict[str, Any],
         max_iterations: int = 5,
     ) -> str:
         """Generate test code from recording data."""
@@ -114,13 +116,14 @@ class TestGenerationAgent:
         except Exception as e:
             console.print(f"[red]Error calling AI: {e}[/red]")
             raise
-    
-    def _create_generation_prompt(self, test_name: str, description: str, recording_data: Dict[str, Any]) -> str:
+
+    def _create_generation_prompt(self, test_name: str, description: str, recording_data: dict[str, Any]) -> str:
         """Create the initial code generation prompt."""
-        
+
         actions_summary = self._summarize_actions(recording_data.get("actions", []))
-        
-        template = Template("""
+
+        template = Template(
+            """
 You are an expert test automation engineer. Generate a high-quality Python test using Playwright based on the recorded user actions.
 
 **Test Requirements:**
@@ -158,20 +161,22 @@ class Test{{ test_name|title|replace('_', '') }}:
 ```
 
 Generate only the Python test code, no explanations.
-        """.strip())
-        
+        """.strip()
+        )
+
         return template.render(
             test_name=test_name,
             description=description,
             url=recording_data.get("url", ""),
             page_title=recording_data.get("page_title", ""),
-            actions_summary=actions_summary
+            actions_summary=actions_summary,
         )
-    
-    def _create_analysis_prompt(self, test_code: str, recording_data: Dict[str, Any]) -> str:
+
+    def _create_analysis_prompt(self, test_code: str, recording_data: dict[str, Any]) -> str:
         """Create prompt for analyzing and improving test code."""
-        
-        template = Template("""
+
+        template = Template(
+            """
 Review this Playwright test code and suggest improvements:
 
 **Current Test Code:**
@@ -192,17 +197,16 @@ Review this Playwright test code and suggest improvements:
 7. Are there any unnecessary or redundant steps?
 
 Provide specific improvement suggestions or say "no improvements needed" if the code looks good.
-        """.strip())
-        
-        return template.render(
-            test_code=test_code,
-            recording_data=json.dumps(recording_data, indent=2)
+        """.strip()
         )
-    
+
+        return template.render(test_code=test_code, recording_data=json.dumps(recording_data, indent=2))
+
     def _create_improvement_prompt(self, test_code: str, analysis: str) -> str:
         """Create prompt for improving test code based on analysis."""
-        
-        template = Template("""
+
+        template = Template(
+            """
 Improve this Playwright test code based on the analysis:
 
 **Current Code:**
@@ -215,48 +219,61 @@ Improve this Playwright test code based on the analysis:
 
 Generate the improved Python test code implementing the suggested improvements. 
 Return only the complete improved code, no explanations.
-        """.strip())
-        
-        return template.render(
-            test_code=test_code,
-            analysis=analysis
+        """.strip()
         )
-    
-    def _summarize_actions(self, actions: List[Dict[str, Any]]) -> str:
+
+        return template.render(test_code=test_code, analysis=analysis)
+
+    def _summarize_actions(self, actions: list[dict[str, Any]]) -> str:
         """Create a human-readable summary of recorded actions."""
         if not actions:
             return "No actions recorded"
-        
+
         summary_lines = []
         for i, action in enumerate(actions, 1):
             action_type = action.get("type", "unknown")
-            
+
             if action_type == "click":
                 selectors = action.get("selectors", {})
                 target = (
-                    f"data-testid='{selectors.get('dataTestId')}'" if selectors.get('dataTestId')
-                    else f"#{selectors.get('id')}" if selectors.get('id')
-                    else f".{selectors.get('className')}" if selectors.get('className')
+                    f"data-testid='{selectors.get('dataTestId')}'"
+                    if selectors.get("dataTestId")
+                    else f"#{selectors.get('id')}"
+                    if selectors.get("id")
+                    else f".{selectors.get('className')}"
+                    if selectors.get("className")
                     else f"{selectors.get('tagName', 'element')}"
                 )
-                text = selectors.get('textContent', '')[:30] + '...' if len(selectors.get('textContent', '')) > 30 else selectors.get('textContent', '')
+                text = (
+                    selectors.get("textContent", "")[:30] + "..."
+                    if len(selectors.get("textContent", "")) > 30
+                    else selectors.get("textContent", "")
+                )
                 summary_lines.append(f"{i}. Click on {target}" + (f" (text: '{text}')" if text else ""))
-                
+
             elif action_type == "input":
                 selectors = action.get("selectors", {})
                 target = (
-                    f"data-testid='{selectors.get('dataTestId')}'" if selectors.get('dataTestId')
-                    else f"#{selectors.get('id')}" if selectors.get('id')
-                    else f"name='{selectors.get('name')}'" if selectors.get('name')
-                    else f"input[type='{selectors.get('type')}']" if selectors.get('type')
+                    f"data-testid='{selectors.get('dataTestId')}'"
+                    if selectors.get("dataTestId")
+                    else f"#{selectors.get('id')}"
+                    if selectors.get("id")
+                    else f"name='{selectors.get('name')}'"
+                    if selectors.get("name")
+                    else f"input[type='{selectors.get('type')}']"
+                    if selectors.get("type")
                     else "input field"
                 )
-                value = action.get("value", "")[:50] + "..." if len(action.get("value", "")) > 50 else action.get("value", "")
+                value = (
+                    action.get("value", "")[:50] + "..."
+                    if len(action.get("value", "")) > 50
+                    else action.get("value", "")
+                )
                 summary_lines.append(f"{i}. Type '{value}' in {target}")
-                
+
             elif action_type == "navigation":
                 url = action.get("url", "")
                 title = action.get("title", "")
                 summary_lines.append(f"{i}. Navigate to {url}" + (f" (title: '{title}')" if title else ""))
-        
+
         return "\n".join(summary_lines)

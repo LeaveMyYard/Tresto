@@ -1,7 +1,7 @@
 """Tests for CLI commands."""
 
-import pytest
 from typer.testing import CliRunner
+
 from tresto.cli import app
 
 runner = CliRunner()

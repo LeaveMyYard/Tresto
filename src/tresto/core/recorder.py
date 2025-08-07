@@ -3,20 +3,22 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Dict, List, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
 from rich.console import Console
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser, BrowserContext, Page
 
-from .config import TrestoConfig
+    from .config import TrestoConfig
+
 
 console = Console()
 
 
 class BrowserRecorder:
     """Records browser interactions for test generation."""
-    
+
     def __init__(self, config: TrestoConfig, headless: bool = False) -> None:
         """Initialize the browser recorder."""
         self.config = config
@@ -24,65 +26,64 @@ class BrowserRecorder:
         self.browser: Browser | None = None
         self.context: BrowserContext | None = None
         self.page: Page | None = None
-        self.actions: List[Dict[str, Any]] = []
-    
-    async def start_recording(self, url: str) -> Dict[str, Any]:
+        self.actions: list[dict[str, Any]] = []
+
+    async def start_recording(self, url: str) -> dict[str, Any]:
         """Start recording browser interactions."""
         try:
             from playwright.async_api import async_playwright
         except ImportError:
             console.print("[red]Error: Playwright not installed. Install with: pip install playwright[/red]")
             return {}
-            
+
         async with async_playwright() as p:
             # Launch browser
             self.browser = await p.chromium.launch(
-                headless=self.headless,
-                args=["--disable-blink-features=AutomationControlled"]
+                headless=self.headless, args=["--disable-blink-features=AutomationControlled"]
             )
-            
+
             # Create context
             self.context = await self.browser.new_context(
                 viewport=self.config.browser.viewport,
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             )
-            
+
             # Create page
             self.page = await self.context.new_page()
-            
+
             # Set up event listeners
             await self._setup_event_listeners()
-            
+
             # Navigate to URL
             console.print(f"🌐 Navigating to: {url}")
             await self.page.goto(url)
-            
+
             console.print("\n[bold green]Recording started![/bold green]")
             console.print("Perform your test actions in the browser...")
             console.print("Press [bold]Ctrl+C[/bold] in the terminal when done.\n")
-            
+
             try:
                 # Keep the browser open and wait for user to finish
                 await self._wait_for_user_completion()
             except KeyboardInterrupt:
                 console.print("\n[yellow]Recording stopped by user[/yellow]")
-            
+
             return {
                 "url": url,
                 "actions": self.actions,
                 "final_url": self.page.url if self.page else url,
                 "page_title": await self.page.title() if self.page else "",
-                "viewport": self.config.browser.viewport
+                "viewport": self.config.browser.viewport,
             }
-    
+
     async def _setup_event_listeners(self) -> None:
         """Set up event listeners to capture user interactions."""
         if not self.page:
             return
-        
+
         # Track navigation
         self.page.on("framenavigated", self._on_navigation)
-        
+
         # Track clicks
         await self.page.add_init_script("""
             document.addEventListener('click', (event) => {
@@ -149,22 +150,24 @@ class BrowserRecorder:
                 return '/' + selector;
             }
         """)
-    
+
     async def _on_navigation(self, frame) -> None:
         """Handle page navigation events."""
         if frame == self.page.main_frame:
-            self.actions.append({
-                "type": "navigation",
-                "timestamp": asyncio.get_event_loop().time(),
-                "url": frame.url,
-                "title": await frame.title()
-            })
-    
+            self.actions.append(
+                {
+                    "type": "navigation",
+                    "timestamp": asyncio.get_event_loop().time(),
+                    "url": frame.url,
+                    "title": await frame.title(),
+                }
+            )
+
     async def _wait_for_user_completion(self) -> None:
         """Wait for user to complete their actions."""
         while True:
             await asyncio.sleep(1)
-            
+
             # Get recorded actions from browser
             if self.page:
                 try:
@@ -174,9 +177,9 @@ class BrowserRecorder:
                         existing_count = len(self.actions)
                         new_actions = browser_actions[existing_count:]
                         self.actions.extend(new_actions)
-                        
+
                         # Clear processed actions
                         await self.page.evaluate("() => { window.trestoActions = []; }")
-                except Exception:
+                except (OSError, RuntimeError, TimeoutError):
                     # Page might be navigating or closed
                     pass

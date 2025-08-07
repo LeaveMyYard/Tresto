@@ -1,12 +1,12 @@
 """Init command for Tresto CLI."""
 
-import typer
 from pathlib import Path
-from rich.console import Console
-from rich.prompt import Prompt, Confirm
-from typing import Optional
 
-from ..core.config import TrestoConfig, save_config
+import typer
+from rich.console import Console
+from rich.prompt import Confirm, Prompt
+
+from tresto.core.config import TrestoConfig, save_config
 
 console = Console()
 
@@ -16,48 +16,39 @@ def init_command(
     template: str = typer.Option("default", "--template", help="Template to use (default, react, vue, etc.)"),
 ) -> None:
     """Initialize Tresto in your project."""
-    
+
     console.print("\n[bold blue]🎭 Welcome to Tresto![/bold blue]")
     console.print("Let's set up AI-powered E2E testing for your project.\n")
-    
+
     # Check if .trestorc already exists
     config_path = Path.cwd() / ".trestorc"
     if config_path.exists() and not force:
         if not Confirm.ask("Configuration file already exists. Overwrite?"):
             console.print("[yellow]Initialization cancelled.[/yellow]")
             return
-    
+
     # Gather project information
-    project_name = Prompt.ask(
-        "Project name", 
-        default=Path.cwd().name
-    )
-    
-    base_url = Prompt.ask(
-        "Base URL for testing", 
-        default="http://localhost:3000"
-    )
-    
-    test_directory = Prompt.ask(
-        "Test directory", 
-        default="./tests"
-    )
-    
+    project_name = Prompt.ask("Project name", default=Path.cwd().name)
+
+    base_url = Prompt.ask("Base URL for testing", default="http://localhost:3000")
+
+    test_directory = Prompt.ask("Test directory", default="./tests")
+
     # Create configuration
     config = TrestoConfig()
     config.project.name = project_name
     config.project.base_url = base_url
     config.project.test_directory = test_directory
-    
+
     # Create test directory structure
     test_dir = Path(test_directory)
     test_dir.mkdir(exist_ok=True)
-    
+
     # Create subdirectories
     (test_dir / "e2e").mkdir(exist_ok=True)
     (test_dir / "fixtures").mkdir(exist_ok=True)
     (test_dir / "utils").mkdir(exist_ok=True)
-    
+
     # Create conftest.py for pytest
     conftest_content = '''"""Pytest configuration and fixtures for Tresto tests."""
 
@@ -89,11 +80,11 @@ async def page(context: BrowserContext):
     yield page
     await page.close()
 '''
-    
+
     conftest_path = test_dir / "conftest.py"
     with open(conftest_path, "w", encoding="utf-8") as f:
         f.write(conftest_content)
-    
+
     # Create example test
     example_test_content = '''"""Example Tresto-generated test."""
 
@@ -115,33 +106,33 @@ class TestExample:
         # Add navigation tests here
         # This is just an example - replace with your actual tests
 '''
-    
+
     example_test_path = test_dir / "e2e" / "test_example.py"
     with open(example_test_path, "w", encoding="utf-8") as f:
         f.write(example_test_content)
-    
+
     # Create utils/__init__.py
     utils_init_path = test_dir / "utils" / "__init__.py"
     with open(utils_init_path, "w", encoding="utf-8") as f:
         f.write('"""Test utilities for Tresto."""\n')
-    
+
     # Create fixtures/__init__.py
     fixtures_init_path = test_dir / "fixtures" / "__init__.py"
     with open(fixtures_init_path, "w", encoding="utf-8") as f:
         f.write('"""Test fixtures for Tresto."""\n')
-    
+
     # Save configuration
     save_config(config)
-    
+
     # Success message
     console.print("\n[green]✅ Tresto initialization complete![/green]\n")
     console.print(f"📁 Created test directory: [bold]{test_directory}[/bold]")
-    console.print(f"⚙️  Created configuration: [bold].trestorc[/bold]")
+    console.print("⚙️  Created configuration: [bold].trestorc[/bold]")
     console.print(f"📝 Created example test: [bold]{example_test_path}[/bold]")
-    
+
     console.print("\n[bold]Next steps:[/bold]")
     console.print("1. Set your [bold]ANTHROPIC_API_KEY[/bold] environment variable")
     console.print("2. Run [bold]tresto record[/bold] to create your first AI-powered test")
     console.print("3. Install Playwright browsers: [bold]playwright install[/bold]")
-    
+
     console.print("\n[dim]Happy testing! 🚀[/dim]")

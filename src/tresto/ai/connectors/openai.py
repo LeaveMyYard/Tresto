@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import os
-from typing import List, Any, AsyncIterator, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
 from rich.console import Console
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
     from langchain_openai import ChatOpenAI
 
 from .base import AIConnector, ChatMessage, GenerationResult
@@ -20,7 +23,7 @@ class OpenAIConnector(AIConnector):
     def __init__(self, model_name: str = "gpt-4o", **kwargs: Any) -> None:
         """Initialize the OpenAI connector."""
         super().__init__(model_name, **kwargs)
-        self._client: Optional[ChatOpenAI] = None
+        self._client: ChatOpenAI | None = None
 
     @property
     def client(self) -> ChatOpenAI:
@@ -41,14 +44,14 @@ class OpenAIConnector(AIConnector):
 
     async def generate(
         self,
-        messages: List[ChatMessage],
+        messages: list[ChatMessage],
         temperature: float = 0.1,
         max_tokens: int = 4000,
         **kwargs: Any,
     ) -> GenerationResult:
         """Generate a response from GPT."""
         try:
-            from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+            from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
             # Convert messages to langchain format
             lc_messages = []
@@ -71,7 +74,9 @@ class OpenAIConnector(AIConnector):
             return GenerationResult(
                 content=response.content,
                 model=self.model_name,
-                tokens_used=response.usage_metadata.get("total_tokens") if hasattr(response, "usage_metadata") else None,
+                tokens_used=response.usage_metadata.get("total_tokens")
+                if hasattr(response, "usage_metadata")
+                else None,
                 finish_reason="completed",
             )
 
@@ -81,14 +86,14 @@ class OpenAIConnector(AIConnector):
 
     async def stream_generate(
         self,
-        messages: List[ChatMessage],
+        messages: list[ChatMessage],
         temperature: float = 0.1,
         max_tokens: int = 4000,
         **kwargs: Any,
     ) -> AsyncIterator[str]:
         """Stream generate a response from GPT."""
         try:
-            from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+            from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
             # Convert messages
             lc_messages = []
@@ -124,7 +129,6 @@ class OpenAIConnector(AIConnector):
         """Maximum tokens for GPT models."""
         if "gpt-4" in self.model_name:
             return 128_000
-        elif "gpt-3.5" in self.model_name:
+        if "gpt-3.5" in self.model_name:
             return 16_385
-        else:
-            return 8_000
+        return 8_000

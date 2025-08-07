@@ -2,17 +2,20 @@
 
 from __future__ import annotations
 
-from typing import Dict, Type, Any
+from typing import TYPE_CHECKING, Any
+
 from rich.console import Console
 
-from .base import AIConnector
 from .anthropic import AnthropicConnector
 from .openai import OpenAIConnector
+
+if TYPE_CHECKING:
+    from .base import AIConnector
 
 console = Console()
 
 # Registry of available connectors
-CONNECTOR_REGISTRY: Dict[str, Type[AIConnector]] = {
+CONNECTOR_REGISTRY: dict[str, type[AIConnector]] = {
     "anthropic": AnthropicConnector,
     "claude": AnthropicConnector,  # Alias
     "openai": OpenAIConnector,
@@ -69,7 +72,7 @@ class ConnectorFactory:
                 connector = ConnectorFactory.create_connector(provider)
                 if connector.is_available:
                     available.append(connector)
-            except Exception:
+            except (ValueError, ImportError, OSError):
                 # Skip unavailable connectors
                 continue
         return available

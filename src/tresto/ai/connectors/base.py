@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional
+from typing import Any
+
 from pydantic import BaseModel
 
 
@@ -19,8 +20,8 @@ class GenerationResult(BaseModel):
 
     content: str
     model: str
-    tokens_used: Optional[int] = None
-    finish_reason: Optional[str] = None
+    tokens_used: int | None = None
+    finish_reason: str | None = None
 
 
 class AIConnector(ABC):
@@ -34,33 +35,29 @@ class AIConnector(ABC):
     @abstractmethod
     async def generate(
         self,
-        messages: List[ChatMessage],
+        messages: list[ChatMessage],
         temperature: float = 0.1,
         max_tokens: int = 4000,
         **kwargs: Any,
     ) -> GenerationResult:
         """Generate a response from the AI model."""
-        pass
 
     @abstractmethod
     async def stream_generate(
         self,
-        messages: List[ChatMessage],
+        messages: list[ChatMessage],
         temperature: float = 0.1,
         max_tokens: int = 4000,
         **kwargs: Any,
     ):
         """Stream generate a response from the AI model."""
-        pass
 
     @property
     @abstractmethod
     def is_available(self) -> bool:
         """Check if the connector is available (API key set, etc.)."""
-        pass
 
     @property
     @abstractmethod
     def max_tokens_limit(self) -> int:
         """Maximum tokens supported by the model."""
-        pass
