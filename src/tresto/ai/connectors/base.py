@@ -3,9 +3,17 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
+from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import BaseModel
+from pydantic_settings import BaseSettings
+from rich.console import Console
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+console = Console()
 
 
 class ChatMessage(BaseModel):
@@ -24,40 +32,36 @@ class GenerationResult(BaseModel):
     finish_reason: str | None = None
 
 
-class AIConnector(ABC):
+class AIConnector[ChatModel: BaseChatModel, Settings: BaseSettings](ABC):
     """Abstract base class for AI model connectors."""
 
-    def __init__(self, model_name: str, **kwargs: Any) -> None:
+    DEFAULT_MODEL: ClassVar[str]
+
+    def __init__(self, model_name: str | None = None, **kwargs: Any) -> None:
         """Initialize the connector."""
-        self.model_name = model_name
+        self.model_name = model_name or self.DEFAULT_MODEL
         self.config = kwargs
+        self._client: BaseChatModel | None = None
+        self._settings = self._create_settings()
 
     @abstractmethod
-    async def generate(
-        self,
-        messages: list[ChatMessage],
-        temperature: float = 0.1,
-        max_tokens: int = 4000,
-        **kwargs: Any,
-    ) -> GenerationResult:
-        """Generate a response from the AI model."""
+    def _create_settings(self) -> Settings:
+        """Create settings instance for this connector."""
 
     @abstractmethod
-    async def stream_generate(
-        self,
-        messages: list[ChatMessage],
-        temperature: float = 0.1,
-        max_tokens: int = 4000,
-        **kwargs: Any,
-    ):
-        """Stream generate a response from the AI model."""
+    def _create_client(self) -> ChatModel:
+        """Create and return the langchain client instance."""
 
     @property
-    @abstractmethod
-    def is_available(self) -> bool:
-        """Check if the connector is available (API key set, etc.)."""
+    def client(self) -> BaseChatModel:
+        """Get or create the langchain client."""
+        if self._client is None:
+            self._client = self._create_client()
+        return self._client
 
-    @property
     @abstractmethod
-    def max_tokens_limit(self) -> int:
-        """Maximum tokens supported by the model."""
+    async def get_available_models(self) -> Sequence[str]:
+        """Get list of available models for this connector."""
+
+
+AnyAIConnector = AIConnector[BaseChatModel, BaseSettings]

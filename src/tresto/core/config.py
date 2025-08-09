@@ -92,12 +92,26 @@ def save_config(config: TrestoConfig) -> None:
 
 def get_anthropic_api_key() -> str | None:
     """Get Anthropic API key from environment variables."""
-    return os.getenv("ANTHROPIC_API_KEY")
+    try:
+        from tresto.ai.settings import create_ai_settings
+
+        settings_class = create_ai_settings("ANTHROPIC")
+        settings = settings_class()
+        return settings.get_api_key() if settings.is_available else None
+    except Exception:
+        return None
 
 
 def get_openai_api_key() -> str | None:
     """Get OpenAI API key from environment variables."""
-    return os.getenv("OPENAI_API_KEY")
+    try:
+        from tresto.ai.settings import create_ai_settings
+
+        settings_class = create_ai_settings("OPENAI")
+        settings = settings_class()
+        return settings.get_api_key() if settings.is_available else None
+    except Exception:
+        return None
 
 
 def get_api_key_for_provider(provider: str) -> str | None:

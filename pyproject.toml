@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "AI-powered E2E testing CLI inspired by Playwright codegen"
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.9"
+requires-python = ">=3.13"
 authors = [
     { name = "LeaveMyYard", email = "your-email@example.com" },
 ]
@@ -39,6 +39,7 @@ dependencies = [
     "langchain-anthropic>=0.1.0",
     "langchain-openai>=0.1.0",
     "langchain-core>=0.1.0",
+    "pydantic-settings>=2.10.1",
 ]
 
 [project.optional-dependencies]
@@ -121,5 +122,7 @@ addopts = "-v --tb=short"
 
 [dependency-groups]
 dev = [
+    "mypy>=1.17.1",
     "ruff>=0.12.7",
+    "types-toml>=0.10.8.20240310",
 ]

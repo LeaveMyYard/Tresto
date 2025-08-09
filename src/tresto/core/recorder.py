@@ -44,7 +44,10 @@ class BrowserRecorder:
 
             # Create context
             self.context = await self.browser.new_context(
-                viewport=self.config.browser.viewport,
+                viewport={
+                    "width": self.config.browser.viewport["width"],
+                    "height": self.config.browser.viewport["height"],
+                },
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             )
 
@@ -151,9 +154,9 @@ class BrowserRecorder:
             }
         """)
 
-    async def _on_navigation(self, frame) -> None:
+    async def _on_navigation(self, frame: Any) -> None:
         """Handle page navigation events."""
-        if frame == self.page.main_frame:
+        if self.page and frame == self.page.main_frame:
             self.actions.append(
                 {
                     "type": "navigation",

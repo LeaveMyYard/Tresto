@@ -6,16 +6,16 @@ from typing import TYPE_CHECKING, Any
 
 from rich.console import Console
 
-from .anthropic import AnthropicConnector
-from .openai import OpenAIConnector
+from .anthropic.connector import AnthropicConnector
+from .openai.connector import OpenAIConnector
 
 if TYPE_CHECKING:
-    from .base import AIConnector
+    from .base import AIConnector, AnyAIConnector
 
 console = Console()
 
 # Registry of available connectors
-CONNECTOR_REGISTRY: dict[str, type[AIConnector]] = {
+CONNECTOR_REGISTRY: dict[str, type[AnyAIConnector]] = {
     "anthropic": AnthropicConnector,
     "claude": AnthropicConnector,  # Alias
     "openai": OpenAIConnector,
@@ -27,7 +27,7 @@ class ConnectorFactory:
     """Factory for creating AI model connectors."""
 
     @staticmethod
-    def create_connector(provider: str, model_name: str | None = None, **kwargs: Any) -> AIConnector:
+    def create_connector(provider: str, model_name: str | None = None, **kwargs: Any) -> AnyAIConnector:
         """Create a connector for the specified provider.
 
         Args:
@@ -50,13 +50,19 @@ class ConnectorFactory:
         connector_class = CONNECTOR_REGISTRY[provider_lower]
 
         # Set default model names if not provided
+        default_model: str
         if model_name is None:
             if provider_lower in ["anthropic", "claude"]:
-                model_name = "claude-3-5-sonnet-20241022"
+                default_model = "claude-3-5-sonnet-20241022"
             elif provider_lower in ["openai", "gpt"]:
-                model_name = "o3-mini"  # Using o3-mini as default, can be changed to "o3" for full model
+                default_model = "o3-mini"  # Using o3-mini as default
+            else:
+                default_model = "unknown-model"
+            model_to_use = default_model
+        else:
+            model_to_use = model_name
 
-        return connector_class(model_name=model_name, **kwargs)
+        return connector_class(model_name=model_to_use, **kwargs)
 
     @staticmethod
     def get_available_providers() -> list[str]:
