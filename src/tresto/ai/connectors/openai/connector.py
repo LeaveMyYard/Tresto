@@ -6,20 +6,20 @@ from typing import TYPE_CHECKING, ClassVar
 
 from langchain_openai import ChatOpenAI
 
-from tresto.ai.connectors.base import AIConnector
+from tresto.ai.connectors.base import BaseAIConnector
 from tresto.utils.errors import InitError
 
-from ..base import AIConnector
+from ..base import BaseAIConnector
 from .settings import OpenAISettings
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-class OpenAIConnector(AIConnector[ChatOpenAI, OpenAISettings]):
-    """Connector for OpenAI models via langchain."""
+class OpenAIConnector(BaseAIConnector[ChatOpenAI, OpenAISettings]):
+    """OpenAI Cloud GPT-based models."""
 
-    DEFAULT_MODEL: ClassVar[str] = "chat"
+    DEFAULT_MODEL: ClassVar[str] = "chatgpt-4-turbo"
 
     def _create_settings(self) -> OpenAISettings:
         return OpenAISettings()
@@ -35,11 +35,11 @@ class OpenAIConnector(AIConnector[ChatOpenAI, OpenAISettings]):
         )
 
     async def get_available_models(self) -> Sequence[str]:
-        """Get list of available Anthropic models."""
         return [
-            "claude-3-5-sonnet-20241022",
-            "claude-3-5-haiku-20241022",
-            "claude-3-opus-20240229",
-            "claude-3-sonnet-20240229",
-            "claude-3-haiku-20240307",
+            "gpt-3.5-turbo",
+            "gpt-4",
+            "gpt-4-turbo",
+            "gpt-4-vision-preview",
+            "gpt-4o",
+            "gpt-4o-mini",
         ]

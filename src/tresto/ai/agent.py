@@ -11,7 +11,7 @@ from rich.console import Console
 if TYPE_CHECKING:
     from tresto.core.config import TrestoConfig
 
-    from .connectors.base import AIConnector
+    from .connectors.base import BaseAIConnector
 
 from .connectors.base import ChatMessage
 from .connectors.factory import ConnectorFactory
@@ -25,7 +25,7 @@ class TestGenerationAgent:
     def __init__(self, config: TrestoConfig) -> None:
         """Initialize the test generation agent."""
         self.config = config
-        self.connector: AIConnector | None = None
+        self.connector: BaseAIConnector | None = None
         self._setup_connector()
 
     def _setup_connector(self) -> None:

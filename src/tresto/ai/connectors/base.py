@@ -32,9 +32,7 @@ class GenerationResult(BaseModel):
     finish_reason: str | None = None
 
 
-class AIConnector[ChatModel: BaseChatModel, Settings: BaseSettings](ABC):
-    """Abstract base class for AI model connectors."""
-
+class BaseAIConnector[ChatModel: BaseChatModel, Settings: BaseSettings](ABC):
     DEFAULT_MODEL: ClassVar[str]
 
     def __init__(self, model_name: str | None = None, **kwargs: Any) -> None:
@@ -52,6 +50,12 @@ class AIConnector[ChatModel: BaseChatModel, Settings: BaseSettings](ABC):
     def _create_client(self) -> ChatModel:
         """Create and return the langchain client instance."""
 
+    @classmethod
+    def get_description(cls) -> str:
+        """Get a brief description of the connector. By default, returns the class docstring."""
+
+        return cls.__doc__ or "No description available."
+
     @property
     def client(self) -> BaseChatModel:
         """Get or create the langchain client."""
@@ -64,4 +68,4 @@ class AIConnector[ChatModel: BaseChatModel, Settings: BaseSettings](ABC):
         """Get list of available models for this connector."""
 
 
-AnyAIConnector = AIConnector[BaseChatModel, BaseSettings]
+AIConnector = BaseAIConnector[BaseChatModel, BaseSettings]

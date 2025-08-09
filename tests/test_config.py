@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from tresto.core.config import TrestoConfig, get_anthropic_api_key, load_config, save_config
+from tresto.core.config import TrestoConfig
 
 
 def test_default_config() -> None:

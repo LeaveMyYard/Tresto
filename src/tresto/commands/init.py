@@ -6,7 +6,7 @@ import typer
 from rich.console import Console
 from rich.prompt import Confirm, Prompt
 
-from tresto.core.config import TrestoConfig, save_config
+from tresto.core.config import TrestoConfig
 
 console = Console()
 

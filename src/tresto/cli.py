@@ -47,9 +47,11 @@ def register_commands() -> None:
     try:
         from .commands.init import init_command
         from .commands.record import record_command
+        from .commands import models
 
         app.command("init", help="Initialize Tresto in your project")(init_command)
         app.command("record", help="Record and generate AI-powered tests")(record_command)
+        app.add_typer(models.app, name="models")
     except ImportError as e:
         console.print(f"[red]Warning: Could not load all commands: {e}[/red]")
 

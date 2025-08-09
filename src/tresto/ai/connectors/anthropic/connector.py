@@ -6,18 +6,18 @@ from typing import TYPE_CHECKING, ClassVar
 
 from langchain_anthropic import ChatAnthropic
 
-from tresto.ai.connectors.base import AIConnector
+from tresto.ai.connectors.base import BaseAIConnector
 from tresto.utils.errors import InitError
 
-from ..base import AIConnector
+from ..base import BaseAIConnector
 from .settings import AnthropicSettings
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-class AnthropicConnector(AIConnector[ChatAnthropic, AnthropicSettings]):
-    """Connector for Anthropic Claude models via langchain."""
+class AnthropicConnector(BaseAIConnector[ChatAnthropic, AnthropicSettings]):
+    """Anthropic Claude models."""
 
     DEFAULT_MODEL: ClassVar[str] = "claude-3-5-sonnet-20241022"
 
