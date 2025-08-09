@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from rich.console import Console
 from pydantic import BaseModel
-from collections.abc import Iterable
+from rich.console import Console
 
 from .anthropic.connector import AnthropicConnector
 from .openai.connector import OpenAIConnector
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from .base import AIConnector
 
 console = Console()
@@ -24,15 +25,17 @@ CONNECTOR_REGISTRY: dict[str, type[AIConnector]] = {
     "gpt": OpenAIConnector,  # Alias
 }
 
+
 def connect(connector_name: str, model_name: str | None = None) -> AIConnector:
     """Create an instance of the specified AI connector."""
-    
+
     connector_class = CONNECTOR_REGISTRY.get(connector_name.lower())
-    
+
     if not connector_class:
         raise KeyError(f"Unknown connector: {connector_name}")
-    
+
     return connector_class(model_name=model_name)
+
 
 class ConnectorInformation(BaseModel):
     name: str

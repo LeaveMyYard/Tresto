@@ -122,7 +122,7 @@ class TestExample:
         f.write('"""Test fixtures for Tresto."""\n')
 
     # Save configuration
-    save_config(config)
+    TrestoConfig.save(config)
 
     # Success message
     console.print("\n[green]✅ Tresto initialization complete![/green]\n")

@@ -45,9 +45,9 @@ def main(
 def register_commands() -> None:
     """Register CLI commands."""
     try:
+        from .commands import models
         from .commands.init import init_command
         from .commands.record import record_command
-        from .commands import models
 
         app.command("init", help="Initialize Tresto in your project")(init_command)
         app.command("record", help="Record and generate AI-powered tests")(record_command)

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import typer
 from rich.console import Console
-from rich.prompt import Confirm, Prompt
 
 from tresto.core.config import TrestoConfig
 
@@ -23,4 +22,4 @@ def record_command(
     console.print("Let's create an intelligent E2E test together!\n")
 
     # Load configuration
-    config = TrestoConfig.load_config()
+    TrestoConfig.load_config()

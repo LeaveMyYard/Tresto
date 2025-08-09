@@ -9,7 +9,6 @@ from langchain_anthropic import ChatAnthropic
 from tresto.ai.connectors.base import BaseAIConnector
 from tresto.utils.errors import InitError
 
-from ..base import BaseAIConnector
 from .settings import AnthropicSettings
 
 if TYPE_CHECKING:

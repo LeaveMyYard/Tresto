@@ -1,9 +1,8 @@
 """AI connector package for different LLM providers."""
 
 from .anthropic import AnthropicConnector
+from .factory import ConnectorInformation, connect, get_available_connectors
 from .openai import OpenAIConnector
-
-from .factory import connect, get_available_connectors, ConnectorInformation
 
 __all__ = [
     "AnthropicConnector",
