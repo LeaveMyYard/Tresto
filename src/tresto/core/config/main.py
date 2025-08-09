@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Self
+from typing import Any, Self, cast
 
 import typer
-import yaml
+import importlib
+yaml = cast(Any, importlib.import_module("yaml"))
 from pydantic import BaseModel
 from rich.console import Console
 
@@ -73,7 +74,6 @@ class ProjectConfig(BaseModel):
 
 class TrestoConfig(BaseModel):
     """Main Tresto configuration."""
-
     project: ProjectConfig
     ai: AIConfig
     browser: BrowserConfig | None = None
@@ -96,7 +96,7 @@ class TrestoConfig(BaseModel):
 
         try:
             with open(config_path) as f:
-                config_data = yaml.load(f)
+                config_data = yaml.safe_load(f)
             return cls(**config_data)
         except (OSError, ValueError, TypeError) as e:
             console.print(f"[red]{e.__class__.__name__} loading configuration:[/red] {e}")
@@ -108,7 +108,7 @@ class TrestoConfig(BaseModel):
 
         try:
             with open(config_path, "w") as f:
-                yaml.dump(self.model_dump(), f)
+                yaml.safe_dump(self.model_dump(), f, sort_keys=False)
         except (OSError, ValueError) as e:
             console.print(f"[red]Error saving configuration:[/red] {e}")
             raise typer.Exit(-1) from e

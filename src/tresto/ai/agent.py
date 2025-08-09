@@ -9,7 +9,7 @@ from jinja2 import Template
 from rich.console import Console
 
 if TYPE_CHECKING:
-    from tresto.core.config import TrestoConfig
+    from tresto.core.config.main import TrestoConfig
 
     from .connectors.base import BaseAIConnector
 

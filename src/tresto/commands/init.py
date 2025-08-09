@@ -9,7 +9,7 @@ from rich.prompt import Confirm, Prompt
 
 from tresto.ai.connectors import connect, get_available_connectors
 from tresto.core.boilerplate import generate_boilerplate
-from tresto.core.config import AIConfig, ProjectConfig, TrestoConfig
+from tresto.core.config.main import AIConfig, ProjectConfig, TrestoConfig
 
 console = Console()
 

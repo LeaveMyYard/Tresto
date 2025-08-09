@@ -5,7 +5,7 @@ from __future__ import annotations
 import typer
 from rich.console import Console
 
-from tresto.core.config import TrestoConfig
+from tresto.core.config.main import TrestoConfig
 
 console = Console()
 

@@ -10,7 +10,7 @@ from rich.console import Console
 if TYPE_CHECKING:
     from playwright.async_api import Browser, BrowserContext, Page
 
-    from .config import TrestoConfig
+    from .config.main import TrestoConfig
 
 
 console = Console()
