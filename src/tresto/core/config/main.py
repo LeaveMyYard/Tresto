@@ -25,7 +25,7 @@ class BrowserConfig(BaseModel):
 
     headless: bool | None = None
     timeout: int | None = None
-    viewport: ViewportConfig | None = None
+    viewport: ViewportConfig
 
     @classmethod
     def default(cls) -> Self:

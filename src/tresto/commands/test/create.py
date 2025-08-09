@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 from rich.console import Console
 from rich.prompt import Prompt
 
 from tresto.core.config.main import TrestoConfig
+from tresto.core.recorder import BrowserRecorder
 
 console = Console()
 
@@ -19,6 +21,10 @@ def _normalize_test_path(raw: str) -> Path:
 
 
 def create_test_command() -> None:
+    asyncio.run(_create_test_command())
+
+
+async def _create_test_command() -> None:
     """Interactively create a new test skeleton with metadata files."""
 
     console.print("\n[bold blue]🧪 Create a new Tresto test[/bold blue]")
@@ -64,3 +70,10 @@ def create_test_command() -> None:
 
     # 5. Recording step will be added later
     console.print("\n[dim]Next: we'll add an interactive recorder to capture the flow.[/dim]")
+
+    recorder = BrowserRecorder(cfg)
+    await recorder.start_recording(
+        url=cfg.project.base_url,
+        output_file=(test_module_path / "playwright_codegen.py").as_posix(),
+        extra_args=["--target", "python-async"],
+    )

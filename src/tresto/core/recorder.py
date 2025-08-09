@@ -1,188 +1,86 @@
-"""Browser recording functionality for Tresto."""
+"""Browser recording launcher for Tresto using Playwright codegen."""
 
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Any
-
-from rich.console import Console
-
-if TYPE_CHECKING:
-    from playwright.async_api import Browser, BrowserContext, Page
-
-    from .config.main import TrestoConfig
-
-
-console = Console()
+import os
+import sys
+from datetime import datetime
+from typing import Any
 
 
 class BrowserRecorder:
-    """Records browser interactions for test generation."""
+    """Thin wrapper around the Playwright code generator CLI.
 
-    def __init__(self, config: TrestoConfig, headless: bool = False) -> None:
-        """Initialize the browser recorder."""
+    This class launches `playwright codegen --target python-async -o <file> [url]` and
+    waits for the user to finish recording. When the recorder window is closed,
+    the generated script (if any) will be available at the requested path.
+    """
+
+    def __init__(self, config: Any | None = None, headless: bool = False) -> None:
         self.config = config
-        self.headless = headless
-        self.browser: Browser | None = None
-        self.context: BrowserContext | None = None
-        self.page: Page | None = None
-        self.actions: list[dict[str, Any]] = []
+        self.headless = headless  # Unused by codegen; retained for API compatibility
 
-    async def start_recording(self, url: str) -> dict[str, Any]:
-        """Start recording browser interactions."""
-        try:
-            from playwright.async_api import async_playwright
-        except ImportError:
-            console.print("[red]Error: Playwright not installed. Install with: pip install playwright[/red]")
-            return {}
+    async def start_recording(
+        self,
+        url: str = "",
+        output_file: str | None = None,
+        extra_args: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Start Playwright codegen and wait until the user stops recording.
 
-        async with async_playwright() as p:
-            # Launch browser
-            self.browser = await p.chromium.launch(
-                headless=self.headless, args=["--disable-blink-features=AutomationControlled"]
-            )
+        Parameters
+        - url: Optional URL to open when codegen starts
+        - output_file: Destination path for the generated script
+        - extra_args: Additional CLI flags to pass to `playwright codegen`
 
-            # Create context
-            self.context = await self.browser.new_context(
-                viewport={
-                    "width": self.config.browser.viewport["width"],
-                    "height": self.config.browser.viewport["height"],
-                },
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            )
+        Returns a dict with metadata about the generation.
+        """
 
-            # Create page
-            self.page = await self.context.new_page()
+        # Resolve output path
+        if output_file is None or output_file.strip() == "":
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_file = os.path.join("tresto_recordings", f"codegen_{timestamp}.py")
 
-            # Set up event listeners
-            await self._setup_event_listeners()
+        output_abs_path = os.path.abspath(output_file)
+        os.makedirs(os.path.dirname(output_abs_path), exist_ok=True)
 
-            # Navigate to URL
-            console.print(f"🌐 Navigating to: {url}")
-            await self.page.goto(url)
+        # Build command args
+        cli_args: list[str] = ["codegen", "--target", "python-async", "-o", output_abs_path]
+        if extra_args:
+            cli_args.extend(extra_args)
+        if url:
+            cli_args.append(url)
 
-            console.print("\n[bold green]Recording started![/bold green]")
-            console.print("Perform your test actions in the browser...")
-            console.print("Press [bold]Ctrl+C[/bold] in the terminal when done.\n")
+        # Try the `playwright` executable; fall back to `python -m playwright`
+        command_variants: list[list[str]] = [
+            ["playwright", *cli_args],
+            [sys.executable, "-m", "playwright", *cli_args],
+        ]
 
+        last_error: Exception | None = None
+        return_code: int | None = None
+        used_command: list[str] | None = None
+
+        for command in command_variants:
             try:
-                # Keep the browser open and wait for user to finish
-                await self._wait_for_user_completion()
-            except KeyboardInterrupt:
-                console.print("\n[yellow]Recording stopped by user[/yellow]")
+                process = await asyncio.create_subprocess_exec(*command)
+                used_command = command
+                return_code = await process.wait()
+                break
+            except FileNotFoundError as exc:
+                last_error = exc
+                continue
 
-            return {
-                "url": url,
-                "actions": self.actions,
-                "final_url": self.page.url if self.page else url,
-                "page_title": await self.page.title() if self.page else "",
-                "viewport": self.config.browser.viewport,
-            }
+        succeeded = return_code == 0 and os.path.exists(output_abs_path)
+        file_size = os.path.getsize(output_abs_path) if os.path.exists(output_abs_path) else 0
 
-    async def _setup_event_listeners(self) -> None:
-        """Set up event listeners to capture user interactions."""
-        if not self.page:
-            return
-
-        # Track navigation
-        self.page.on("framenavigated", self._on_navigation)
-
-        # Track clicks
-        await self.page.add_init_script("""
-            document.addEventListener('click', (event) => {
-                const element = event.target;
-                const rect = element.getBoundingClientRect();
-                
-                // Get various selector options
-                const selectors = {
-                    id: element.id,
-                    className: element.className,
-                    tagName: element.tagName.toLowerCase(),
-                    textContent: element.textContent?.trim().substring(0, 50),
-                    dataTestId: element.getAttribute('data-testid'),
-                    ariaLabel: element.getAttribute('aria-label'),
-                    xpath: getXPath(element)
-                };
-                
-                window.trestoActions = window.trestoActions || [];
-                window.trestoActions.push({
-                    type: 'click',
-                    timestamp: Date.now(),
-                    selectors: selectors,
-                    coordinates: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
-                });
-            });
-            
-            // Track input changes
-            document.addEventListener('input', (event) => {
-                const element = event.target;
-                if (element.tagName.toLowerCase() === 'input' || element.tagName.toLowerCase() === 'textarea') {
-                    const selectors = {
-                        id: element.id,
-                        name: element.name,
-                        type: element.type,
-                        placeholder: element.placeholder,
-                        dataTestId: element.getAttribute('data-testid'),
-                        xpath: getXPath(element)
-                    };
-                    
-                    window.trestoActions = window.trestoActions || [];
-                    window.trestoActions.push({
-                        type: 'input',
-                        timestamp: Date.now(),
-                        selectors: selectors,
-                        value: element.value
-                    });
-                }
-            });
-            
-            // Helper function to get XPath
-            function getXPath(element) {
-                if (element.id) return `//*[@id="${element.id}"]`;
-                if (element.tagName === 'BODY') return '/html/body';
-                
-                let selector = element.tagName.toLowerCase();
-                if (element.className) {
-                    selector += '[@class="' + element.className + '"]';
-                }
-                
-                let parent = element.parentElement;
-                if (parent) {
-                    return getXPath(parent) + '/' + selector;
-                }
-                return '/' + selector;
-            }
-        """)
-
-    async def _on_navigation(self, frame: Any) -> None:
-        """Handle page navigation events."""
-        if self.page and frame == self.page.main_frame:
-            self.actions.append(
-                {
-                    "type": "navigation",
-                    "timestamp": asyncio.get_event_loop().time(),
-                    "url": frame.url,
-                    "title": await frame.title(),
-                }
-            )
-
-    async def _wait_for_user_completion(self) -> None:
-        """Wait for user to complete their actions."""
-        while True:
-            await asyncio.sleep(1)
-
-            # Get recorded actions from browser
-            if self.page:
-                try:
-                    browser_actions = await self.page.evaluate("() => window.trestoActions || []")
-                    if browser_actions:
-                        # Merge new actions
-                        existing_count = len(self.actions)
-                        new_actions = browser_actions[existing_count:]
-                        self.actions.extend(new_actions)
-
-                        # Clear processed actions
-                        await self.page.evaluate("() => { window.trestoActions = []; }")
-                except (OSError, RuntimeError, TimeoutError):
-                    # Page might be navigating or closed
-                    pass
+        return {
+            "url": url,
+            "output_file": output_abs_path,
+            "exit_code": return_code,
+            "succeeded": succeeded,
+            "file_size": file_size,
+            "command": " ".join(used_command) if used_command else "",
+            "error": str(last_error) if (last_error and not succeeded and return_code is None) else "",
+        }
