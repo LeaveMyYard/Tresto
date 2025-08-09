@@ -3,7 +3,15 @@
 import typer
 
 from . import create as create_module
+from .run import run_tests_command
 
-app = typer.Typer(help="Work with tests")
+app = typer.Typer(help="Work with tests", invoke_without_command=True, no_args_is_help=False)
+
+app.callback(invoke_without_command=True)
+def _default(ctx: typer.Context) -> None:
+	# If invoked as `tresto test` with no subcommand, run tests
+	if ctx.invoked_subcommand is None:
+		run_tests_command()
 
 app.command("create", help="Create a new test scaffold")(create_module.create_test_command)
+app.command("run", help="Run all tests with pytest")(run_tests_command)

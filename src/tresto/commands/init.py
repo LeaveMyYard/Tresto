@@ -73,7 +73,7 @@ async def _init_command(force: bool, template: str) -> None:
     )
 
     # Save configuration
-    config_path = TrestoConfig.save(config)
+    config_path = config.save()
 
     # Create test directory structure
     test_dir = Path(test_directory)
