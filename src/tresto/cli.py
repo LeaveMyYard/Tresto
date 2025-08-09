@@ -22,8 +22,9 @@ def version_callback(value: bool) -> None:
         raise typer.Exit()
 
 
-@app.callback()
+@app.callback(invoke_without_command=True)
 def main(
+    ctx: typer.Context,
     version: bool | None = typer.Option(
         None,
         "--version",
@@ -39,6 +40,11 @@ def main(
     Create intelligent E2E tests with AI agents that understand your testing intent,
     not just your clicks. Built on Playwright with Claude AI integration.
     """
+    if ctx.invoked_subcommand is None:
+        # Show hello command when no subcommand is provided
+        from .commands.hello import hello_command
+
+        hello_command()
 
 
 # Import and register commands after app creation to avoid circular imports
