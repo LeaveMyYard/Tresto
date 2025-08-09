@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-import subprocess
 import shutil
-import importlib
-from typing import Any, cast
+import subprocess
+from pathlib import Path
 
 import typer
 from rich.console import Console
@@ -44,9 +42,10 @@ def _resolve_tests_root() -> Path:
 def _run_via_pytest_module(target: Path) -> int | None:
     """Try running tests via pytest Python API, return exit code or None if unavailable."""
     try:
-        pytest = cast(Any, importlib.import_module("pytest"))
-    except Exception:
+        import pytest
+    except ImportError:
         return None
+
     try:
         return int(pytest.main([str(target) + "/tresto"]))
     except SystemExit as e:  # pytest may call sys.exit

@@ -52,8 +52,8 @@ def register_commands() -> None:
     """Register CLI commands."""
     try:
         from .commands import models
-        from .commands.init import init_command
         from .commands import test as test_commands
+        from .commands.init import init_command
 
         app.command("init", help="Initialize Tresto in your project")(init_command)
         app.add_typer(models.app, name="models")

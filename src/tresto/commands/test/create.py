@@ -4,10 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import typer
-from typing import Any, cast
-import importlib
-yaml = cast(Any, importlib.import_module("yaml"))
 from rich.console import Console
 from rich.prompt import Prompt
 
@@ -17,80 +13,54 @@ console = Console()
 
 
 def _normalize_test_path(raw: str) -> Path:
-	# allow dots or slashes as separators; collapse repeated separators
-	parts = [p for chunk in raw.split("/") for p in chunk.split(".") if p]
-	return Path(*parts)
+    # allow dots or slashes as separators; collapse repeated separators
+    parts = [p for chunk in raw.split("/") for p in chunk.split(".") if p]
+    return Path(*parts)
 
 
 def create_test_command() -> None:
-	"""Interactively create a new test skeleton with metadata files."""
+    """Interactively create a new test skeleton with metadata files."""
 
-	console.print("\n[bold blue]🧪 Create a new Tresto test[/bold blue]")
+    console.print("\n[bold blue]🧪 Create a new Tresto test[/bold blue]")
 
-	# Ensure project config exists
-	cfg = TrestoConfig.load_config()
+    # Ensure project config exists
+    cfg = TrestoConfig.load_config()
+    base_dir = Path(cfg.project.test_directory)
 
-	# 1-2. Ask for test name/path
-	raw_name = Prompt.ask(
-		"Test name (use dots or slashes for subfolders)",
-		default="sample.login.flow",
-	)
-	rel_test_path = _normalize_test_path(raw_name)
+    # 1-2. Ask for test name/path
+    raw_name = Prompt.ask("Test name (use dots or slashes for subfolders)")
+    rel_test_path = _normalize_test_path(raw_name)
+    abs_test_path = base_dir / rel_test_path
 
-	# 3. Ask for high-level instructions
-	instructions = Prompt.ask(
-		"Brief test instructions",
-		default=(
-			"We want to test that the login feature works: entering an incorrect password fails, "
-			"and with the correct one it passes."
-		),
-	)
+    test_name = abs_test_path.stem
+    test_module_path = (abs_test_path / "..").resolve()
+    target_file_path = (test_module_path / f"test_{test_name}.py").resolve()
 
-	# 4. Compute target directory under project test_directory
-	base_dir = Path(cfg.project.test_directory)
-	target_dir = (base_dir / rel_test_path).resolve()
+    if target_file_path.exists():
+        console.print(f"\n[red]❌ Test already exists[/red] at [bold]{target_file_path}[/bold]")
+        return
 
-	# Create directory structure: <test>/test.py, <test>/tresto.yaml, <test>/.tresto/
-	target_dir.mkdir(parents=True, exist_ok=True)
-	hidden_dir = target_dir / ".tresto"
-	hidden_dir.mkdir(exist_ok=True)
+    # 3. Ask for high-level instructions
+    instructions = Prompt.ask("What will this test do?")
 
-	# Create test.py if not exists
-	test_py = target_dir / "test.py"
-	if not test_py.exists():
-		test_py.write_text(
-			"""
-# This is a placeholder for your Tresto test.
-# Later, recording and AI will generate and evolve this test based on your instructions in tresto.yaml.
+    # Create directory structure: <test>/test.py, <test>/tresto.yaml, <test>/.tresto/
+    test_module_path.mkdir(parents=True, exist_ok=True)
 
-def test_placeholder():
-	assert True
-""".lstrip()
-		)
+    # We need to place __init__.py to each subdir between the root and the test
+    scan_path = test_module_path.relative_to(base_dir.resolve())
+    console.print(f"Iterating [bold]{scan_path}[/bold]")
+    for subdir in scan_path.parents:
+        console.print(f"Creating [bold]{subdir / '__init__.py'}[/bold]")
+        (Path.cwd() / base_dir / subdir / "__init__.py").touch(exist_ok=True)
 
-	# Create tresto.yaml with metadata for this test
-	tresto_yaml = target_dir / "tresto.yaml"
-	if not tresto_yaml.exists():
-		data = {
-			"test": {
-				"name": str(rel_test_path),
-				"instructions": instructions,
-			},
-			"meta": {
-				"created_with": "tresto test create",
-				# room for future AI/model metadata, repair context, etc.
-			},
-		}
-		tresto_yaml.write_text(yaml.safe_dump(data, sort_keys=False))
+    # Create test.py if not exists
+    if not target_file_path.exists():
+        target_file_path.touch()
+        target_file_path.write_text(f"# TODO: test writing is in progress\n# {instructions}")
 
-	console.print(
-		f"\n[green]✅ Created test scaffold[/green] at [bold]{target_dir.relative_to(Path.cwd())}[/bold]"
-	)
-	console.print("Files:")
-	console.print(f"  - {test_py.relative_to(Path.cwd())}")
-	console.print(f"  - {tresto_yaml.relative_to(Path.cwd())}")
-	console.print(f"  - {hidden_dir.relative_to(Path.cwd())}/")
+    console.print(
+        f"\n[green]✅ Created test scaffold[/green] at [bold]{target_file_path.relative_to(Path.cwd())}[/bold]"
+    )
 
-	# 5. Recording step will be added later
-	console.print("\n[dim]Next: we'll add an interactive recorder to capture the flow.[/dim]")
-
+    # 5. Recording step will be added later
+    console.print("\n[dim]Next: we'll add an interactive recorder to capture the flow.[/dim]")

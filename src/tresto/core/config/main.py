@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Self, cast
+from typing import Self
 
 import typer
-import importlib
-yaml = cast(Any, importlib.import_module("yaml"))
+import yaml
 from pydantic import BaseModel
 from rich.console import Console
 
@@ -74,6 +73,7 @@ class ProjectConfig(BaseModel):
 
 class TrestoConfig(BaseModel):
     """Main Tresto configuration."""
+
     project: ProjectConfig
     ai: AIConfig
     browser: BrowserConfig | None = None
