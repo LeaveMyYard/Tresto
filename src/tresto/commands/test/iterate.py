@@ -8,6 +8,8 @@ from pathlib import Path
 from rich.console import Console
 from rich.prompt import Prompt
 from rich.panel import Panel
+from rich.live import Live
+from rich.syntax import Syntax
 
 from tresto.core.config.main import TrestoConfig
 from tresto.core.recorder import BrowserRecorder
@@ -53,14 +55,13 @@ async def _iterate_test_command(path: str) -> None:
     console.print(Panel.fit("🤖 Launching AI Agent to generate and run your test", title="Tresto AI"))
 
     agent = LangGraphTestAgent(cfg)
-    with console.status("Thinking and iterating on the test...", spinner="dots"):
-        state = await agent.run(
-            test_name=test_name,
-            test_instructions=instructions,
-            test_file_path=target_file_path.as_posix(),
-            recording_path=recording_path,
-            max_iterations=cfg.ai.max_iterations or 5,
-        )
+    state = await agent.run(
+        test_name=test_name,
+        test_instructions=instructions,
+        test_file_path=target_file_path.as_posix(),
+        recording_path=str(recording_path),
+        max_iterations=cfg.ai.max_iterations or 5,
+    )
 
     # Summarize results
     result = state.get("run_result")

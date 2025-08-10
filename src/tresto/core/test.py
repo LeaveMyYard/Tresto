@@ -45,23 +45,63 @@ async def run_test_code_in_file(test_code: str, test_file_path: str) -> TestRunR
     except OSError as exc:
         return TestRunResult(success=False, duration_s=0.0, traceback=str(exc))
 
-    cmd = [sys.executable, "-m", "pytest", str(test_path), "-q", "--maxfail=1", "--disable-warnings"]
-    start = time.perf_counter()
-    proc = await asyncio.create_subprocess_exec(
-        *cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    out_b, err_b = await proc.communicate()
-    dur = time.perf_counter() - start
-    success = proc.returncode == 0
-    tb = None if success else (err_b.decode() or out_b.decode())
+    async def _run(cmd: list[str]) -> tuple[int, str, str, float]:
+        start = time.perf_counter()
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        out_b, err_b = await proc.communicate()
+        dur = time.perf_counter() - start
+        return int(proc.returncode or 0), out_b.decode(), err_b.decode(), dur
+
+    # Try python -m pytest first
+    code, out, err, dur = await _run([
+        sys.executable,
+        "-m",
+        "pytest",
+        str(test_path),
+        "-q",
+        "--maxfail=1",
+        "--disable-warnings",
+    ])
+
+    def _needs_fallback(stdout: str, stderr: str) -> bool:
+        text = f"{stdout}\n{stderr}".lower()
+        return "no module named pytest" in text or "pytest: command not found" in text
+
+    if code != 0 and _needs_fallback(out, err):
+        # Fallback to pytest executable or `uv run pytest`
+        import shutil
+
+        if shutil.which("pytest"):
+            code, out, err, dur = await _run([
+                "pytest",
+                str(test_path),
+                "-q",
+                "--maxfail=1",
+                "--disable-warnings",
+            ])
+        elif shutil.which("uv"):
+            code, out, err, dur = await _run([
+                "uv",
+                "run",
+                "pytest",
+                str(test_path),
+                "-q",
+                "--maxfail=1",
+                "--disable-warnings",
+            ])
+
+    success = code == 0
+    tb = None if success else (err or out)
     return TestRunResult(
         success=success,
         duration_s=dur,
         traceback=tb,
-        stdout=out_b.decode(),
-        stderr=err_b.decode(),
+        stdout=out,
+        stderr=err,
     )
 
 

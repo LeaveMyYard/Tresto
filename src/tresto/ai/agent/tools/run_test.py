@@ -12,4 +12,11 @@ async def run_test(state: TestAgentState) -> dict[str, Any]:
     code = state.get("current_test_code", "")
     test_file_path = state["test_file_path"]
     result: TestRunResult = await run_test_code_in_file(code, test_file_path)
-    return {"run_result": result}
+    return {
+        "run_result": result,
+        "debug_run": {
+            "success": result.success,
+            "duration_s": result.duration_s,
+            "traceback": result.traceback,
+        },
+    }

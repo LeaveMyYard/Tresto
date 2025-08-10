@@ -10,4 +10,4 @@ if TYPE_CHECKING:
 
 async def inspect(state: TestAgentState) -> dict[str, Any]:
     notes = await inspect_site(state["config"], state.get("recording_path"))
-    return {"inspection_notes": notes}
+    return {"inspection_notes": notes, "debug_inspect": notes[:1200]}

@@ -4,6 +4,7 @@ import builtins
 from typing import TYPE_CHECKING, Any
 
 from langgraph.graph import END, StateGraph
+from rich.console import Console
 
 from .state import TestAgentState
 from .tools.ask_user import ask_user as tool_ask_user
@@ -52,20 +53,68 @@ def _decide_next(state: TestAgentState) -> dict[str, Any]:
 class LangGraphTestAgent:
     """LangGraph-driven agent that can generate, run, inspect, and refine tests."""
 
-    def __init__(self, config: TrestoConfig, ask_user: Callable[[str], str] | None = None) -> None:
+    def __init__(self, config: TrestoConfig, ask_user: Callable[[str], str] | None = None, console: Console | None = None) -> None:
         self.config = config
         self.ask_user = ask_user or _ask_input_impl
+        self._console = console or Console()
 
         # Router
         def router(state: TestAgentState) -> str:
             return str(_decide_next(state).get("decision", "finish"))
 
-        # Build graph
+        # Build graph with logging wrappers
         graph = StateGraph(TestAgentState)
-        graph.add_node("modify_code", generate_or_update_code)
-        graph.add_node("run_test", tool_run_test)
-        graph.add_node("inspect_site", tool_inspect)
-        graph.add_node("ask_user", lambda s: tool_ask_user(s, self.ask_user))
+
+        def wrap(name: str, fn):
+            async def inner(s: TestAgentState):
+                it = s.get("iterations", 0) + 1
+                self._console.print(f"[bold cyan]{name} • iteration {it}[/bold cyan]")
+                res = await fn(s)
+                # For code editing, only print a single edit line
+                if name == "Generate/Improve Code":
+                    filename = s.get("test_file_path", "<unknown>")
+                    self._console.print(f"Edited {filename}")
+                    return res
+                # Pretty-print debug payloads if present
+                dbg_gen = res.get("debug_generate") if isinstance(res, dict) else None
+                if isinstance(dbg_gen, dict):
+                    prompt = dbg_gen.get("prompt") or ""
+                    preview = dbg_gen.get("response_preview") or ""
+                    if prompt:
+                        self._console.print("[bold cyan]Prompt:[/bold cyan]")
+                        self._console.print(prompt)
+                    if preview:
+                        self._console.print("[bold magenta]Model Output (preview):[/bold magenta]")
+                        self._console.print(preview)
+
+                think = res.get("debug_think") if isinstance(res, dict) else None
+                if isinstance(think, str) and think.strip():
+                    self._console.print("[bold blue]Thinking:[/bold blue]")
+                    self._console.print(think)
+
+                dbg_run = res.get("debug_run") if isinstance(res, dict) else None
+                if isinstance(dbg_run, dict):
+                    ok = dbg_run.get("success")
+                    dur = dbg_run.get("duration_s")
+                    color = "green" if ok else "red"
+                    self._console.print(f"[bold {color}]Test Run: success={ok} duration={dur:.2f}s[/bold {color}]")
+                    tb = dbg_run.get("traceback")
+                    if tb:
+                        self._console.print("[bold red]Traceback:[/bold red]")
+                        self._console.print(tb)
+
+                dbg_inspect = res.get("debug_inspect") if isinstance(res, dict) else None
+                if isinstance(dbg_inspect, str) and dbg_inspect.strip():
+                    self._console.print("[bold yellow]Inspection Notes:[/bold yellow]")
+                    self._console.print(dbg_inspect)
+                return res
+
+            return inner
+
+        graph.add_node("modify_code", wrap("Generate/Improve Code", generate_or_update_code))
+        graph.add_node("run_test", wrap("Run Test", tool_run_test))
+        graph.add_node("inspect_site", wrap("Inspect Site", tool_inspect))
+        graph.add_node("ask_user", wrap("Ask User", lambda s: tool_ask_user(s, self.ask_user)))
 
         graph.set_conditional_entry_point(
             router,
@@ -92,7 +141,7 @@ class LangGraphTestAgent:
                 },
             )
 
-        self._app = graph.compile()
+        self._app = graph.compile(debug=True)
 
     async def run(
         self,
@@ -123,4 +172,5 @@ class LangGraphTestAgent:
             if _decide_next(state).get("decision") == "finish":
                 break
 
+        self._console.print("[bold green]Agent Finished[/bold green]")
         return state
