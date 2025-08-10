@@ -95,7 +95,7 @@ class TrestoConfig(BaseModel):
             raise typer.Exit(0)
 
         try:
-            with open(config_path) as f:
+            with open(config_path, encoding="utf-8") as f:
                 config_data = yaml.safe_load(f)
             return cls(**config_data)
         except (OSError, ValueError, TypeError) as e:
@@ -107,7 +107,7 @@ class TrestoConfig(BaseModel):
         config_path = self.get_config_path()
 
         try:
-            with open(config_path, "w") as f:
+            with open(config_path, "w", encoding="utf-8") as f:
                 yaml.safe_dump(self.model_dump(), f, sort_keys=False)
         except (OSError, ValueError) as e:
             console.print(f"[red]Error saving configuration:[/red] {e}")

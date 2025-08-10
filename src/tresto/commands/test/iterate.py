@@ -22,11 +22,11 @@ def _normalize_test_path(raw: str) -> Path:
     return Path(*parts)
 
 
-def create_test_command() -> None:
-    asyncio.run(_create_test_command())
+def iterate_test_command(path: str) -> None:
+    asyncio.run(_iterate_test_command(path))
 
 
-async def _create_test_command() -> None:
+async def _iterate_test_command(path: str) -> None:
     """Interactively create a new test skeleton with metadata files."""
 
     console.print("\n[bold blue]🧪 Create a new Tresto test[/bold blue]")
@@ -35,53 +35,20 @@ async def _create_test_command() -> None:
     cfg = TrestoConfig.load_config()
     base_dir = Path(cfg.project.test_directory)
 
-    # 1-2. Ask for test name/path
-    raw_name = Prompt.ask("Test name (use dots or slashes for subfolders)")
-    rel_test_path = _normalize_test_path(raw_name)
+    rel_test_path = _normalize_test_path(path)
     abs_test_path = base_dir / rel_test_path
 
     test_name = abs_test_path.stem
     test_module_path = (abs_test_path / "..").resolve()
     target_file_path = (test_module_path / f"test_{test_name}.py").resolve()
 
-    if target_file_path.exists():
-        console.print(f"\n[red]❌ Test already exists[/red] at [bold]{target_file_path}[/bold]")
+    if not target_file_path.exists():
+        console.print(f"\n[red]❌ Test does not exist[/red] at [bold]{target_file_path}[/bold]")
         return
 
     # 3. Ask for high-level instructions
-    instructions = Prompt.ask("What will this test do?")
-
-    # Create directory structure: <test>/test.py, <test>/tresto.yaml, <test>/.tresto/
-    test_module_path.mkdir(parents=True, exist_ok=True)
-
-    # We need to place __init__.py to each subdir between the root and the test
-    scan_path = test_module_path.relative_to(base_dir.resolve())
-    console.print(f"Iterating [bold]{scan_path}[/bold]")
-    for subdir in scan_path.parents:
-        console.print(f"Creating [bold]{subdir / '__init__.py'}[/bold]")
-        (Path.cwd() / base_dir / subdir / "__init__.py").touch(exist_ok=True)
-
-    # Create test.py if not exists
-    if not target_file_path.exists():
-        target_file_path.touch()
-        target_file_path.write_text(f"# TODO: test writing is in progress\n# {instructions}")
-
-    console.print(
-        f"\n[green]✅ Created test scaffold[/green] at [bold]{target_file_path.relative_to(Path.cwd())}[/bold]"
-    )
-
-    # 5. Recording step will be added later
-    console.print("\n[dim]Next: we'll add an interactive recorder to capture the flow.[/dim]")
-
-    recorder = BrowserRecorder(cfg)
-    rec_info = await recorder.start_recording(
-        url=cfg.project.base_url,
-        output_file=(test_module_path / "playwright_codegen.py").as_posix(),
-        extra_args=["--target", "python-async"],
-    )
-
-    # Launch the AI agent to generate, run, and refine the test
-    recording_path = (rec_info or {}).get("output_file", (test_module_path / "playwright_codegen.py").as_posix())
+    instructions = "Go to the main page of the app, go to the top panel navigation and to the current auction list. Open one current auction and check that the page contains dropdowns with it's groups and subgroups. Clicking one should open lot list."
+    recording_path = test_module_path / "playwright_codegen.py"
 
     console.print(Panel.fit("🤖 Launching AI Agent to generate and run your test", title="Tresto AI"))
 
@@ -89,6 +56,7 @@ async def _create_test_command() -> None:
     with console.status("Thinking and iterating on the test...", spinner="dots"):
         state = await agent.run(
             test_name=test_name,
+            test_instructions=instructions,
             test_file_path=target_file_path.as_posix(),
             recording_path=recording_path,
             max_iterations=cfg.ai.max_iterations or 5,

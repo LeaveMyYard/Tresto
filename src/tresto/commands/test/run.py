@@ -2,63 +2,38 @@
 
 from __future__ import annotations
 
-import shutil
-import subprocess
 from pathlib import Path
 
 import typer
 from rich.console import Console
 
 from tresto.core.config.main import TrestoConfig
+from tresto.core.test import (
+    resolve_tests_root,
+    run_tests_path_via_executable,
+    run_tests_path_via_pytest_module,
+)
 
 console = Console()
 
 
 def _resolve_tests_root() -> Path:
-    """Resolve the directory to run tests from.
-
-    Priority:
-    - tresto.yaml -> project.test_directory
-    - ./tresto/tests
-    - ./tests
-    - current working directory
-    """
     config_path = TrestoConfig.get_config_path()
     if config_path.exists():
         try:
             cfg = TrestoConfig.load_config()
-            return Path(cfg.project.test_directory).resolve()
         except typer.Exit:
-            # fall back to defaults below
-            pass
-
-    cwd = Path.cwd()
-    for d in (cwd / "tresto" / "tests", cwd / "tests"):
-        if d.exists():
-            return d.resolve()
-    return cwd
+            return resolve_tests_root(None)
+        return resolve_tests_root(cfg)
+    return resolve_tests_root(None)
 
 
 def _run_via_pytest_module(target: Path) -> int | None:
-    """Try running tests via pytest Python API, return exit code or None if unavailable."""
-    try:
-        import pytest
-    except ImportError:
-        return None
-
-    try:
-        return int(pytest.main([str(target) + "/tresto"]))
-    except SystemExit as e:  # pytest may call sys.exit
-        return int(getattr(e, "code", 1) or 0)
+    return run_tests_path_via_pytest_module(target)
 
 
 def _run_via_executable(target: Path) -> int | None:
-    """Try running tests via a pytest executable or uv fallback; return exit code or None if not found."""
-    if shutil.which("pytest"):
-        return subprocess.call(["pytest", str(target)])
-    if shutil.which("uv"):
-        return subprocess.call(["uv", "run", "pytest", str(target)])
-    return None
+    return run_tests_path_via_executable(target)
 
 
 def run_tests_command() -> None:
