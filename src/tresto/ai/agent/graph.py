@@ -1,176 +1,97 @@
 from __future__ import annotations
 
 import builtins
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, cast
 
 from langgraph.graph import END, StateGraph
 from rich.console import Console
+from pathlib import Path
 
-from .state import TestAgentState
+from .state import Decision, TestAgentState
 from .tools.ask_user import ask_user as tool_ask_user
+from .tools.deside_next_action import tool_decide_next_action
 from .tools.generate import generate_or_update_code
-from .tools.inspect import inspect as tool_inspect
+from .tools.playwright_codegen import tool_record_user_input
 from .tools.run_test import run_test as tool_run_test
 
 if TYPE_CHECKING:
-    from tresto.core.config.main import TrestoConfig
     from collections.abc import Callable
 
+    from tresto.core.config.main import TrestoConfig
 
 
 def _ask_input_impl(prompt: str) -> str:
     return builtins.input(f"{prompt}\n> ")
 
 
-def _ensure_state_defaults(state: TestAgentState) -> TestAgentState:
-    state.setdefault("messages", [])
-    return state
-
-
-def _decide_next(state: TestAgentState) -> dict[str, Any]:
-    it = state.get("iterations", 0)
-    max_it = state.get("max_iterations", 5)
-    if it >= max_it:
-        return {"decision": "finish"}
-
-    if "current_test_code" not in state:
-        return {"decision": "modify_code"}
-
-    if "run_result" not in state:
-        return {"decision": "run_test"}
-
-    run = state["run_result"]
-    if not run.success:
-        if not state.get("inspection_notes"):
-            return {"decision": "inspect_site"}
-        if it % 2 == 1:
-            return {"decision": "ask_user"}
-        return {"decision": "modify_code"}
-
-    return {"decision": "finish"}
-
-
 class LangGraphTestAgent:
     """LangGraph-driven agent that can generate, run, inspect, and refine tests."""
 
-    def __init__(self, config: TrestoConfig, ask_user: Callable[[str], str] | None = None, console: Console | None = None) -> None:
+    def __init__(
+        self,
+        config: TrestoConfig,
+        test_name: str,
+        test_file_path: Path,
+        test_instructions: str,
+        ask_user: Callable[[str], str] | None = None,
+        console: Console | None = None,
+    ) -> None:
         self.config = config
-        self.ask_user = ask_user or _ask_input_impl
+        self._ask_user = ask_user or _ask_input_impl
         self._console = console or Console()
 
-        # Router
-        def router(state: TestAgentState) -> str:
-            return str(_decide_next(state).get("decision", "finish"))
+        self.test_name = test_name
+        self.test_file_path = test_file_path
+        self.test_instructions = test_instructions
+
+        self.state = TestAgentState(
+            test_name=test_name,
+            test_file_path=test_file_path,
+            test_instructions=test_instructions,
+            config=config,
+            recording_file_path=Path("./playwright_codegen.py"),
+        )
+
+        self.state.messages.append(self.state.current_state_message)
+        self.state.output_to_console_nowait(str(self.state.current_state_message.content))
 
         # Build graph with logging wrappers
         graph = StateGraph(TestAgentState)
 
-        def wrap(name: str, fn):
-            async def inner(s: TestAgentState):
-                it = s.get("iterations", 0) + 1
-                self._console.print(f"[bold cyan]{name} • iteration {it}[/bold cyan]")
-                res = await fn(s)
-                # For code editing, only print a single edit line
-                if name == "Generate/Improve Code":
-                    filename = s.get("test_file_path", "<unknown>")
-                    self._console.print(f"Edited {filename}")
-                    return res
-                # Pretty-print debug payloads if present
-                dbg_gen = res.get("debug_generate") if isinstance(res, dict) else None
-                if isinstance(dbg_gen, dict):
-                    prompt = dbg_gen.get("prompt") or ""
-                    preview = dbg_gen.get("response_preview") or ""
-                    if prompt:
-                        self._console.print("[bold cyan]Prompt:[/bold cyan]")
-                        self._console.print(prompt)
-                    if preview:
-                        self._console.print("[bold magenta]Model Output (preview):[/bold magenta]")
-                        self._console.print(preview)
+        graph.add_node(Decision.RECORD_USER_INPUT, tool_record_user_input)
+        graph.add_node(Decision.DESIDE_NEXT_ACTION, tool_decide_next_action)
+        graph.add_node(Decision.MODIFY_CODE, generate_or_update_code)
+        graph.add_node(Decision.RUN_TEST, tool_run_test)
+        # graph.add_node(Decision.INSPECT_SITE, tool_inspect)
+        graph.add_node(Decision.ASK_USER, self.ask_user)
 
-                think = res.get("debug_think") if isinstance(res, dict) else None
-                if isinstance(think, str) and think.strip():
-                    self._console.print("[bold blue]Thinking:[/bold blue]")
-                    self._console.print(think)
-
-                dbg_run = res.get("debug_run") if isinstance(res, dict) else None
-                if isinstance(dbg_run, dict):
-                    ok = dbg_run.get("success")
-                    dur = dbg_run.get("duration_s")
-                    color = "green" if ok else "red"
-                    self._console.print(f"[bold {color}]Test Run: success={ok} duration={dur:.2f}s[/bold {color}]")
-                    tb = dbg_run.get("traceback")
-                    if tb:
-                        self._console.print("[bold red]Traceback:[/bold red]")
-                        self._console.print(tb)
-
-                dbg_inspect = res.get("debug_inspect") if isinstance(res, dict) else None
-                if isinstance(dbg_inspect, str) and dbg_inspect.strip():
-                    self._console.print("[bold yellow]Inspection Notes:[/bold yellow]")
-                    self._console.print(dbg_inspect)
-                return res
-
-            return inner
-
-        graph.add_node("modify_code", wrap("Generate/Improve Code", generate_or_update_code))
-        graph.add_node("run_test", wrap("Run Test", tool_run_test))
-        graph.add_node("inspect_site", wrap("Inspect Site", tool_inspect))
-        graph.add_node("ask_user", wrap("Ask User", lambda s: tool_ask_user(s, self.ask_user)))
-
-        graph.set_conditional_entry_point(
-            router,
-            {
-                "modify_code": "modify_code",
-                "run_test": "run_test",
-                "inspect_site": "inspect_site",
-                "ask_user": "ask_user",
-                "finish": END,
-            },
+        graph.set_entry_point(
+            Decision.DESIDE_NEXT_ACTION if self.state.current_recording_code is not None else Decision.RECORD_USER_INPUT
         )
 
-        # Edges: after each action, route again
-        for node in ("modify_code", "run_test", "inspect_site", "ask_user"):
-            graph.add_conditional_edges(
-                node,
-                router,
-                {
-                    "modify_code": "modify_code",
-                    "run_test": "run_test",
-                    "inspect_site": "inspect_site",
-                    "ask_user": "ask_user",
-                    "finish": END,
-                },
-            )
+        for node in set(Decision) - {Decision.FINISH, Decision.DESIDE_NEXT_ACTION}:
+            graph.add_edge(node, Decision.DESIDE_NEXT_ACTION)
 
-        self._app = graph.compile(debug=True)
+        # Router
+        def router(state: TestAgentState) -> str:
+            return state.last_decision or Decision.DESIDE_NEXT_ACTION
 
-    async def run(
-        self,
-        *,
-        test_name: str,
-        test_instructions: str,
-        test_file_path: str,
-        recording_path: str | None,
-        max_iterations: int = 5,
-    ) -> TestAgentState:
-        initial: TestAgentState = {
-            "test_name": test_name,
-            "test_instructions": test_instructions,
-            "test_file_path": test_file_path,
-            "recording_path": recording_path or "",
-            "config": self.config,
-            "messages": [],
-            "iterations": 0,
-            "max_iterations": max_iterations,
-        }
+        graph.add_conditional_edges(
+            Decision.DESIDE_NEXT_ACTION,
+            router,
+            # We map all decisions to themselves, so that we can use the decision as a key in the dictionary
+            {Decision(v.value): Decision(v.value) for v in Decision._member_map_.values()} | {Decision.FINISH: END},
+        )
 
-        state = _ensure_state_defaults(initial)
-        while True:
-            # Execute one step
-            state = await self._app.ainvoke(state)
-            state["iterations"] = state.get("iterations", 0) + 1
+        self._app = graph.compile()
 
-            if _decide_next(state).get("decision") == "finish":
-                break
+    async def ask_user(self, state: TestAgentState) -> TestAgentState:
+        return await tool_ask_user(state, self._ask_user)
 
-        self._console.print("[bold green]Agent Finished[/bold green]")
-        return state
+    async def run(self) -> None:
+        try:
+            await self._app.ainvoke(self.state)
+        except Exception:  # noqa: BLE001
+            self._console.print_exception()
+        else:
+            self._console.print("[bold green]Agent Finished[/bold green]")

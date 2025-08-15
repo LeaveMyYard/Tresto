@@ -70,42 +70,33 @@ async def _create_test_command() -> None:
         f"\n[green]✅ Created test scaffold[/green] at [bold]{target_file_path.relative_to(Path.cwd())}[/bold]"
     )
 
-    # 5. Recording step will be added later
-    console.print("\n[dim]Next: we'll add an interactive recorder to capture the flow.[/dim]")
+    console.print(Panel.fit("🤖 Launching AI Agent...", title="Tresto AI"))
 
-    recorder = BrowserRecorder(cfg)
-    rec_info = await recorder.start_recording(
-        url=cfg.project.base_url,
-        output_file=(test_module_path / "playwright_codegen.py").as_posix(),
-        extra_args=["--target", "python-async"],
+    agent = LangGraphTestAgent(
+        cfg,
+        test_name=test_name,
+        test_file_path=target_file_path.as_posix(),
+        test_instructions=instructions,
     )
-
-    # Launch the AI agent to generate, run, and refine the test
-    recording_path = (rec_info or {}).get("output_file", (test_module_path / "playwright_codegen.py").as_posix())
-
-    console.print(Panel.fit("🤖 Launching AI Agent to generate and run your test", title="Tresto AI"))
-
-    agent = LangGraphTestAgent(cfg)
     with console.status("Thinking and iterating on the test...", spinner="dots"):
-        state = await agent.run(
-            test_name=test_name,
-            test_file_path=target_file_path.as_posix(),
-            recording_path=recording_path,
-            max_iterations=cfg.ai.max_iterations or 5,
-        )
+        state = await agent.run()
 
     # Summarize results
     result = state.get("run_result")
     if result and getattr(result, "success", False):
-        console.print(Panel.fit(
-            f"✅ Test passed in {getattr(result, 'duration_s', 0.0):.2f}s\nSaved to: [bold]{target_file_path}[/bold]",
-            title="AI Result",
-            border_style="green",
-        ))
+        console.print(
+            Panel.fit(
+                f"✅ Test passed in {getattr(result, 'duration_s', 0.0):.2f}s\nSaved to: [bold]{target_file_path}[/bold]",
+                title="AI Result",
+                border_style="green",
+            )
+        )
     else:
         tb = getattr(result, "traceback", "") if result else "No result"
-        console.print(Panel(
-            f"❌ Test failed. See traceback below:\n\n{tb}\n\nSaved to: [bold]{target_file_path}[/bold]",
-            title="AI Result",
-            border_style="red",
-        ))
+        console.print(
+            Panel(
+                f"❌ Test failed. See traceback below:\n\n{tb}\n\nSaved to: [bold]{target_file_path}[/bold]",
+                title="AI Result",
+                border_style="red",
+            )
+        )

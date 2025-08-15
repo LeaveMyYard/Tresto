@@ -16,7 +16,7 @@ def hello_command() -> None:
     """Show welcome message with ASCII art."""
 
     # ASCII art for Tresto
-    ascii_art = textwrap.dedent("""
+    ascii_art = textwrap.dedent("""\
         ████████╗██████╗ ███████╗███████╗████████╗ ██████╗ 
         ╚══██╔══╝██╔══██╗██╔════╝██╔════╝╚══██╔══╝██╔═══██╗
            ██║   ██████╔╝█████╗  ███████╗   ██║   ██║   ██║

@@ -26,7 +26,7 @@ class BrowserRecorder:
         url: str = "",
         output_file: str | None = None,
         extra_args: list[str] | None = None,
-    ) -> dict[str, Any]:
+    ) -> str:
         """Start Playwright codegen and wait until the user stops recording.
 
         Parameters
@@ -34,7 +34,7 @@ class BrowserRecorder:
         - output_file: Destination path for the generated script
         - extra_args: Additional CLI flags to pass to `playwright codegen`
 
-        Returns a dict with metadata about the generation.
+        Returns the generated code.
         """
 
         # Resolve output path
@@ -60,12 +60,10 @@ class BrowserRecorder:
 
         last_error: Exception | None = None
         return_code: int | None = None
-        used_command: list[str] | None = None
 
         for command in command_variants:
             try:
                 process = await asyncio.create_subprocess_exec(*command)
-                used_command = command
                 return_code = await process.wait()
                 break
             except FileNotFoundError as exc:
@@ -73,14 +71,9 @@ class BrowserRecorder:
                 continue
 
         succeeded = return_code == 0 and os.path.exists(output_abs_path)
-        file_size = os.path.getsize(output_abs_path) if os.path.exists(output_abs_path) else 0
+        
+        if not succeeded:
+            raise RuntimeError(f"Failed to record browser interaction: {last_error}")
 
-        return {
-            "url": url,
-            "output_file": output_abs_path,
-            "exit_code": return_code,
-            "succeeded": succeeded,
-            "file_size": file_size,
-            "command": " ".join(used_command) if used_command else "",
-            "error": str(last_error) if (last_error and not succeeded and return_code is None) else "",
-        }
+        with open(output_abs_path) as f:
+            return f.read()

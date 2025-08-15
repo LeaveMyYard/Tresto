@@ -6,11 +6,13 @@ import asyncio
 from pathlib import Path
 
 from rich.console import Console
+from rich.status import Status
 from rich.prompt import Prompt
 from rich.panel import Panel
 from rich.live import Live
 from rich.syntax import Syntax
 
+from tresto.ai.agent.state import TestAgentState, ThinkingStep, WaitingStep, WritingCodeStep
 from tresto.core.config.main import TrestoConfig
 from tresto.core.recorder import BrowserRecorder
 from tresto.ai.agent import LangGraphTestAgent
@@ -35,6 +37,8 @@ async def _iterate_test_command(path: str) -> None:
 
     # Ensure project config exists
     cfg = TrestoConfig.load_config()
+    console.print(f"Using {cfg.ai.model} from {cfg.ai.connector}")
+
     base_dir = Path(cfg.project.test_directory)
 
     rel_test_path = _normalize_test_path(path)
@@ -49,32 +53,24 @@ async def _iterate_test_command(path: str) -> None:
         return
 
     # 3. Ask for high-level instructions
-    instructions = "Go to the main page of the app, go to the top panel navigation and to the current auction list. Open one current auction and check that the page contains dropdowns with it's groups and subgroups. Clicking one should open lot list."
-    recording_path = test_module_path / "playwright_codegen.py"
+    instructions = "Write a test that checks the login page. When opening the page first time you are greeted with the login form. It requires to enter login and password. If entered correctly, login page will dissappear and the app will be shown. If the login was incorrect, there will be a toast shown with some error."
 
-    console.print(Panel.fit("🤖 Launching AI Agent to generate and run your test", title="Tresto AI"))
+    console.print("🤖 Launching AI Agent to generate and run your test")
 
-    agent = LangGraphTestAgent(cfg)
-    state = await agent.run(
+    agent = LangGraphTestAgent(
+        cfg,
         test_name=test_name,
+        test_file_path=target_file_path,
         test_instructions=instructions,
-        test_file_path=target_file_path.as_posix(),
-        recording_path=str(recording_path),
-        max_iterations=cfg.ai.max_iterations or 5,
     )
 
-    # Summarize results
-    result = state.get("run_result")
-    if result and getattr(result, "success", False):
-        console.print(Panel.fit(
-            f"✅ Test passed in {getattr(result, 'duration_s', 0.0):.2f}s\nSaved to: [bold]{target_file_path}[/bold]",
-            title="AI Result",
-            border_style="green",
-        ))
-    else:
-        tb = getattr(result, "traceback", "") if result else "No result"
-        console.print(Panel(
-            f"❌ Test failed. See traceback below:\n\n{tb}\n\nSaved to: [bold]{target_file_path}[/bold]",
-            title="AI Result",
-            border_style="red",
-        ))
+    agent_run_task = asyncio.create_task(agent.run())
+
+    while not agent_run_task.done():
+        output = await agent.state.consume_output()
+        async for update in output.consume():
+            console.print(f"[{output.__class__.__name__}] {update}")
+
+    await agent_run_task
+
+    console.print("Finished")
