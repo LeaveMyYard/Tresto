@@ -53,7 +53,7 @@ async def _iterate_test_command(path: str) -> None:
         return
 
     # 3. Ask for high-level instructions
-    instructions = "Write a test that checks the login page. When opening the page first time you are greeted with the login form. It requires to enter login and password. If entered correctly, login page will dissappear and the app will be shown. If the login was incorrect, there will be a toast shown with some error."
+    instructions = "I want to write a test that logins and goes to the dashboard page. I want to check that the dashboard page is loaded and contains the correct elements. For example I want to click the top tabs and see all pages loaded successfully."
 
     console.print("🤖 Launching AI Agent to generate and run your test")
 

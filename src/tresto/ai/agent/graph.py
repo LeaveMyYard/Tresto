@@ -49,11 +49,10 @@ class LangGraphTestAgent:
             test_file_path=test_file_path,
             test_instructions=test_instructions,
             config=config,
-            recording_file_path=Path("./playwright_codegen.py"),
+            recording_file_path=Path(f"./tresto/.recordings/{test_name}.py"),
         )
 
         self.state.messages.append(self.state.current_state_message)
-        self.state.output_to_console_nowait(str(self.state.current_state_message.content))
 
         # Build graph with logging wrappers
         graph = StateGraph(TestAgentState)

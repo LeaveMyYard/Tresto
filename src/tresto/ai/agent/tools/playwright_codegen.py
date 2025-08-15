@@ -19,7 +19,10 @@ async def tool_record_user_input(state: TestAgentState) -> TestAgentState:
     await state.add_output(recording_step)
 
     async with recording_step:
-        state.current_recording_code = await recorder.start_recording(url=state.config.project.base_url)
+        state.current_recording_code = await recorder.start_recording(
+            url=state.config.project.base_url,
+            output_file=state.recording_file_path,
+        )
 
     state.messages.append(
         SystemMessage(

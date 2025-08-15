@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 import os
 import sys
 from datetime import datetime
@@ -24,7 +25,7 @@ class BrowserRecorder:
     async def start_recording(
         self,
         url: str = "",
-        output_file: str | None = None,
+        output_file: str | Path | None = None,
         extra_args: list[str] | None = None,
     ) -> str:
         """Start Playwright codegen and wait until the user stops recording.
@@ -38,9 +39,12 @@ class BrowserRecorder:
         """
 
         # Resolve output path
-        if output_file is None or output_file.strip() == "":
+        if not output_file:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             output_file = os.path.join("tresto_recordings", f"codegen_{timestamp}.py")
+
+        if isinstance(output_file, str):
+            output_file = Path(output_file)
 
         output_abs_path = os.path.abspath(output_file)
         os.makedirs(os.path.dirname(output_abs_path), exist_ok=True)

@@ -48,8 +48,7 @@ async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
                     state.last_decision = Decision(decision)
                 else:
                     raise ValueError(f"Invalid action: {decision}. Available actions are: {'\n'.join(f'- {action.value}' for action in available_actions)}")
-            except ValueError as e:
-                print(e)
+            except ValueError:
                 messages.append(
                     SystemMessage(
                         f"Invalid action: {decision}. "
