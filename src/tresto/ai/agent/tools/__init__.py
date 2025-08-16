@@ -4,5 +4,7 @@ __all__ = [
     "ask_user",
     "generate",
     "inspect",
+    "list_directory",
+    "read_file_content",
     "run_test",
 ]

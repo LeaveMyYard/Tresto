@@ -11,7 +11,9 @@ from .state import Decision, TestAgentState
 from .tools.ask_user import ask_user as tool_ask_user
 from .tools.deside_next_action import tool_decide_next_action
 from .tools.generate import generate_or_update_code
+from .tools.list_directory import list_directory
 from .tools.playwright_codegen import tool_record_user_input
+from .tools.read_file_content import read_file_content
 from .tools.run_test import run_test as tool_run_test
 
 if TYPE_CHECKING:
@@ -33,6 +35,7 @@ class LangGraphTestAgent:
         test_name: str,
         test_file_path: Path,
         test_instructions: str,
+        recording_file_path: Path,
         ask_user: Callable[[str], str] | None = None,
         console: Console | None = None,
     ) -> None:
@@ -43,13 +46,14 @@ class LangGraphTestAgent:
         self.test_name = test_name
         self.test_file_path = test_file_path
         self.test_instructions = test_instructions
+        self.recording_file_path = recording_file_path
 
         self.state = TestAgentState(
             test_name=test_name,
             test_file_path=test_file_path,
             test_instructions=test_instructions,
             config=config,
-            recording_file_path=Path(f"./tresto/.recordings/{test_name}.py"),
+            recording_file_path=recording_file_path,
         )
 
         self.state.messages.append(self.state.current_state_message)
@@ -61,6 +65,8 @@ class LangGraphTestAgent:
         graph.add_node(Decision.DESIDE_NEXT_ACTION, tool_decide_next_action)
         graph.add_node(Decision.MODIFY_CODE, generate_or_update_code)
         graph.add_node(Decision.RUN_TEST, tool_run_test)
+        # graph.add_node(Decision.READ_FILE_CONTENT, read_file_content)
+        # graph.add_node(Decision.LIST_DIRECTORY, list_directory)
         # graph.add_node(Decision.INSPECT_SITE, tool_inspect)
         graph.add_node(Decision.ASK_USER, self.ask_user)
 
@@ -93,4 +99,4 @@ class LangGraphTestAgent:
         except Exception:  # noqa: BLE001
             self._console.print_exception()
         else:
-            self._console.print("[bold green]Agent Finished[/bold green]")
+            self._console.print("[bold green]✅ Finished[/bold green]")

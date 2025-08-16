@@ -4,25 +4,26 @@ import textwrap
 from typing import TYPE_CHECKING
 
 from langchain_core.messages import SystemMessage
+from rich.console import Console
 
-from tresto.ai.agent.state import PlaywrightRecordingStep
 from tresto.core.recorder import BrowserRecorder
 
 if TYPE_CHECKING:
     from tresto.ai.agent.state import TestAgentState
 
 
+console = Console()
+
+
 async def tool_record_user_input(state: TestAgentState) -> TestAgentState:
     recorder = BrowserRecorder(config=state.config)
 
-    recording_step = PlaywrightRecordingStep()
-    await state.add_output(recording_step)
+    console.print("🔍 Running [bold]`playwright codegen`[/bold] to record user input...")
 
-    async with recording_step:
-        state.current_recording_code = await recorder.start_recording(
-            url=state.config.project.base_url,
-            output_file=state.recording_file_path,
-        )
+    state.current_recording_code = await recorder.start_recording(
+        url=state.config.project.base_url,
+        output_file=state.recording_file_path,
+    )
 
     state.messages.append(
         SystemMessage(
@@ -37,5 +38,7 @@ async def tool_record_user_input(state: TestAgentState) -> TestAgentState:
             ),
         )
     )
+
+    console.print("✅ User input recorded successfully")
 
     return state
