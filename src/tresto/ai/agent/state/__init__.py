@@ -23,8 +23,8 @@ class Decision(StrEnum):
     ASK_USER = "ask_user"
     RUN_TEST = "run_test"
     MODIFY_CODE = "modify_code"
-    # READ_FILE_CONTENT = "read_file_content"
-    # LIST_DIRECTORY = "list_directory"
+    READ_FILE_CONTENT = "read_file_content"
+    LIST_DIRECTORY = "list_directory"
     # INSPECT_SITE = "inspect_site"
     FINISH = "finish"
 
@@ -42,8 +42,15 @@ SYSTEM_PROMPT = textwrap.dedent(
         You are given a codegen file of user manually executing a test on his website.
         Your task is to produce a complete, meaningful test for this website using pytest + Playwright async API.
         Use robust selectors and proper waits, and meaningful expect() assertions.
+        If there is not enough information in the codegen file, prefer to:
+        - Go through files in the project directory and read their content / Visit the website and inspect it
+        - Ask the user for input
+        - Ask the user to record the test using playwright codegen (we don't really want to ask the user to do the same thing twice)
         You will be running in the loop and will be able to select actions to take: 
         write code, ask the user for input, ask the user to manually record the test using playwright codegen, etc.
+        Do not finish untill you have verified that the test is working or if you think that you are not able to finish it.
+        In case you are not able to finish it, you should explicitly say that you are not able to finish it to the user and why.
+        When writing code, there are 3 fixtures automatically added to conftest: browser, context and page.
     """
 )
 

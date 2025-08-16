@@ -26,6 +26,10 @@ async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
     messages = state.messages.copy()
     available_actions = set(Decision) - {Decision.DESIDE_NEXT_ACTION}
 
+    # If the user already recorded the test, let's not ask him to do it again
+    if state.current_recording_code is not None:
+        available_actions.add(Decision.RECORD_USER_INPUT)
+
     message = SystemMessage(
         textwrap.dedent(
             f"""\
@@ -112,5 +116,5 @@ async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
             break
 
     state.messages.append(SystemMessage(content=f"Model decided to take action: {state.last_decision.value}"))
-    console.print(f"[bold green]✅ Model decided to take action: {state.last_decision.value}[/bold green]")
+    console.print(f"[bold green]✅ Model decided to take action: {state.last_decision.value}[/bold green]", justify="center")
     return state

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import builtins
-from typing import TYPE_CHECKING, cast
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 from langgraph.graph import END, StateGraph
 from rich.console import Console
-from pathlib import Path
 
 from .state import Decision, TestAgentState
 from .tools.ask_user import ask_user as tool_ask_user
@@ -65,8 +65,8 @@ class LangGraphTestAgent:
         graph.add_node(Decision.DESIDE_NEXT_ACTION, tool_decide_next_action)
         graph.add_node(Decision.MODIFY_CODE, generate_or_update_code)
         graph.add_node(Decision.RUN_TEST, tool_run_test)
-        # graph.add_node(Decision.READ_FILE_CONTENT, read_file_content)
-        # graph.add_node(Decision.LIST_DIRECTORY, list_directory)
+        graph.add_node(Decision.READ_FILE_CONTENT, read_file_content)
+        graph.add_node(Decision.LIST_DIRECTORY, list_directory)
         # graph.add_node(Decision.INSPECT_SITE, tool_inspect)
         graph.add_node(Decision.ASK_USER, tool_ask_user)
 
