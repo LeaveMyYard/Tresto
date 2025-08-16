@@ -50,7 +50,6 @@ SYSTEM_PROMPT = textwrap.dedent(
         write code, ask the user for input, ask the user to manually record the test using playwright codegen, etc.
         Do not finish untill you have verified that the test is working or if you think that you are not able to finish it.
         In case you are not able to finish it, you should explicitly say that you are not able to finish it to the user and why.
-        When writing code, there are 3 fixtures automatically added to conftest: browser, context and page.
     """
 )
 
