@@ -68,7 +68,7 @@ class LangGraphTestAgent:
         # graph.add_node(Decision.READ_FILE_CONTENT, read_file_content)
         # graph.add_node(Decision.LIST_DIRECTORY, list_directory)
         # graph.add_node(Decision.INSPECT_SITE, tool_inspect)
-        graph.add_node(Decision.ASK_USER, self.ask_user)
+        graph.add_node(Decision.ASK_USER, tool_ask_user)
 
         graph.set_entry_point(
             Decision.DESIDE_NEXT_ACTION if self.state.current_recording_code is not None else Decision.RECORD_USER_INPUT
@@ -89,9 +89,6 @@ class LangGraphTestAgent:
         )
 
         self._app = graph.compile()
-
-    async def ask_user(self, state: TestAgentState) -> TestAgentState:
-        return await tool_ask_user(state, self._ask_user)
 
     async def run(self) -> None:
         try:

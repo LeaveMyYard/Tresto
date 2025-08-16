@@ -33,14 +33,15 @@ class FileHeader(BaseModel):
     test_name: str
     test_description: str
     created_date: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
+    content: str
 
-    def write_to_file(self, file_path: Path, content: str) -> None:
+    def write_to_file(self, file_path: Path) -> None:
         """Write content to file with Tresto header, replacing any existing docstring."""
         # Generate the new header docstring
         header_docstring = self.to_docstring()
         
         # Remove existing module docstring if present
-        content_without_docstring = self._remove_module_docstring(content)
+        content_without_docstring = self._remove_module_docstring(self.content)
         
         # Add our header docstring at the beginning
         final_content = f'"""{header_docstring}"""\n\n{content_without_docstring}'
@@ -54,15 +55,21 @@ class FileHeader(BaseModel):
         if not file_path.exists():
             raise TrestoFileHeaderCorrupted(f"File does not exist: {file_path}")
         
-        content = file_path.read_text()
+        file_content = file_path.read_text()
         
         # Extract the first docstring (module docstring)
-        docstring = cls._extract_module_docstring(content)
+        docstring = cls._extract_module_docstring(file_content)
         if not docstring:
             raise TrestoFileHeaderCorrupted("No module docstring found")
         
         # Parse the docstring to extract header information
-        return cls._parse_header_docstring(docstring)
+        header = cls._parse_header_docstring(docstring)
+        
+        # Add the content without the header docstring
+        content_without_docstring = cls._remove_module_docstring(file_content)
+        header.content = content_without_docstring
+        
+        return header
 
     def to_docstring(self) -> str:
         """Convert header to docstring format."""
@@ -144,5 +151,6 @@ class FileHeader(BaseModel):
         return cls(
             test_name=test_name,
             test_description=test_description,
-            created_date=created_date
+            created_date=created_date,
+            content=""  # Will be set by read_from_file
         )

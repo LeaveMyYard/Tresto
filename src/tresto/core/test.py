@@ -35,15 +35,11 @@ def ensure_test_file(path_str: str) -> Path:
     return path
 
 
-async def run_test_code_in_file(test_code: str, test_file_path: str) -> TestRunResult:
-    test_path = ensure_test_file(test_file_path)
-    if not test_code.strip():
-        return TestRunResult(success=False, duration_s=0.0, traceback="No test code to run")
-
-    try:
-        test_path.write_text(test_code, encoding="utf-8")
-    except OSError as exc:
-        return TestRunResult(success=False, duration_s=0.0, traceback=str(exc))
+async def run_test_code_in_file(test_file_path: Path) -> TestRunResult:
+    if not test_file_path.exists():
+        return TestRunResult(success=False, duration_s=0.0, traceback="Test file not found")
+    
+    test_path = test_file_path.resolve()
 
     async def _run(cmd: list[str]) -> tuple[int, str, str, float]:
         start = time.perf_counter()

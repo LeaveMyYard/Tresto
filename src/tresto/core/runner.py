@@ -1,4 +1,4 @@
-import asyncio
+
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, ValidationError
@@ -105,8 +105,8 @@ class TrestoRunner(BaseModel):
 
             self._pathfinder.test_file_path.touch()
 
-        header = FileHeader(test_name=self.test_name, test_description=self._test_description)
-        header.write_to_file(self._pathfinder.test_file_path, previous_content)
+        header = FileHeader(test_name=self.test_name, test_description=self._test_description, content=previous_content)
+        header.write_to_file(self._pathfinder.test_file_path)
 
     async def _run_agent(self) -> None:
         self.console.print("🤖 Launching AI Agent to generate and run your test")

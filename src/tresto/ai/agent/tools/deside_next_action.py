@@ -5,7 +5,9 @@ from typing import TYPE_CHECKING
 
 from langchain_core.messages import AIMessage, SystemMessage
 from rich.console import Console
-from rich.progress import Progress
+from rich.live import Live
+from rich.markdown import Markdown
+from rich.panel import Panel
 
 from tresto.ai.agent.state import Decision
 
@@ -17,57 +19,98 @@ console = Console()
 
 
 async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
-    with Progress() as progress:
-        task = progress.add_task("Deciding next action", total=100)
-        llm = state.create_llm()
+    llm = state.create_llm()
 
-        # We create a copy of the messages to avoid modifying the original list
-        # So that we don't pass useless messages to the model
-        messages = state.messages.copy()
-        available_actions = set(Decision) - {Decision.DESIDE_NEXT_ACTION}
+    # We create a copy of the messages to avoid modifying the original list
+    # So that we don't pass useless messages to the model
+    messages = state.messages.copy()
+    available_actions = set(Decision) - {Decision.DESIDE_NEXT_ACTION}
 
-        message = SystemMessage(
-            textwrap.dedent(
-                f"""\
-                    You are required to decide the next action to take in a test.
-                    Available actions are: {" ".join(f"- {action.value}" for action in available_actions)}
-                    With the next message, verbosely think about what to choose.
-                    The last line should contain the action you want to take and nothing else.
-                """
-            )
+    message = SystemMessage(
+        textwrap.dedent(
+            f"""\
+                You are required to decide the next action to take in a test.
+                Available actions are: {" ".join(f"- {action.value}" for action in available_actions)}
+                With the next message, verbosely think about what to choose.
+                The last line should contain the action you want to take and nothing else.
+            """
         )
+    )
 
-        messages.append(message)
+    messages.append(message)
 
-        reasoning = await llm.ainvoke(messages)
-        console.print(reasoning.content)
-        messages.append(AIMessage(content=reasoning.content))
-        decision = reasoning.content.split("\n")[-1].strip()
+    # Stream the response and display markdown in real-time
+    reasoning_content = ""
 
-        progress.update(task, completed=90)
-
-        while True:
-            try:
-                if decision in available_actions:
-                    state.last_decision = Decision(decision)
-                else:
-                    raise ValueError(
-                        f"Invalid action: {decision}. "
-                        f"Available actions are: {'\n'.join(f'- {action.value}' for action in available_actions)}"
-                    )
-            except ValueError:
-                messages.append(
-                    SystemMessage(
-                        f"Invalid action: {decision}. "
-                        f"Available actions are: {'\n'.join(f'- {action.value}' for action in available_actions)}"
-                        f"\nTry again with the correct action and nothing else."
-                    )
+    console.print()  # Add spacing before streaming
+    
+    with Live(console=console, refresh_per_second=10) as live:
+        async for chunk in llm.astream(messages):
+            if chunk.content:
+                reasoning_content += chunk.content
+                
+                # Create markdown content with character count
+                markdown_content = Markdown(reasoning_content, style="dim")
+                char_count = len(reasoning_content)
+                
+                # Display in a panel with title showing character count
+                panel = Panel(
+                    markdown_content,
+                    title=f"🤔 AI Reasoning ({char_count} characters)",
+                    title_align="left",
+                    border_style="dim"
                 )
-                decision = (await llm.ainvoke(messages)).content.split("\n")[-1].strip()
+                live.update(panel)
+    
+    console.print()  # Add spacing after streaming completes
+    
+    messages.append(AIMessage(content=reasoning_content))
+    decision = reasoning_content.split("\n")[-1].strip()
+
+    while True:
+        try:
+            if decision in available_actions:
+                state.last_decision = Decision(decision)
             else:
-                break
+                raise ValueError(
+                    f"Invalid action: {decision}. "
+                    f"Available actions are: {'\n'.join(f'- {action.value}' for action in available_actions)}"
+                )
+        except ValueError:
+            messages.append(
+                SystemMessage(
+                    f"Invalid action: {decision}. "
+                    f"Available actions are: {'\n'.join(f'- {action.value}' for action in available_actions)}"
+                    f"\nTry again with the correct action and nothing else."
+                )
+            )
+            
+            # Stream the retry response with markdown too
+            retry_content = ""
+            
+            with Live(console=console, refresh_per_second=10) as live:
+                async for chunk in llm.astream(messages):
+                    if chunk.content:
+                        retry_content += chunk.content
+                        
+                        # Create markdown content with character count
+                        markdown_content = Markdown(retry_content)
+                        char_count = len(retry_content)
+                        
+                        # Display in a panel with title showing character count
+                        panel = Panel(
+                            markdown_content,
+                            title=f"🔄 AI Retry ({char_count} characters)",
+                            title_align="left",
+                            border_style="yellow"
+                        )
+                        live.update(panel)
+            
+            console.print()  # Add spacing after retry streaming completes
+            decision = retry_content.split("\n")[-1].strip()
+        else:
+            break
 
-        progress.update(task, completed=100)
-
-        state.messages.append(SystemMessage(content=f"Model decided to take action: {state.last_decision.value}"))
-        return state
+    state.messages.append(SystemMessage(content=f"Model decided to take action: {state.last_decision.value}"))
+    console.print(f"[bold green]✅ Model decided to take action: {state.last_decision.value}[/bold green]")
+    return state

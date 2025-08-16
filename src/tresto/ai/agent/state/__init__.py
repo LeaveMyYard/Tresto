@@ -101,13 +101,15 @@ class TestAgentState(BaseModel):
     @property
     def current_test_code(self) -> str | None:
         try:
-            return FileHeader.read_from_file(self.test_file_path).test_code
+            return FileHeader.read_from_file(self.test_file_path).content
         except TrestoFileHeaderCorrupted:
             return None
 
     @current_test_code.setter
     def current_test_code(self, value: str) -> None:
-        FileHeader.write_to_file(self.test_file_path, value)
+        file = FileHeader.read_from_file(self.test_file_path)
+        file.content = value
+        file.write_to_file(self.test_file_path)
 
     @property
     def current_recording_code(self) -> str | None:
