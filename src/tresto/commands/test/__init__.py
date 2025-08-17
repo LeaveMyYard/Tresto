@@ -3,8 +3,8 @@
 import typer
 
 from . import create as create_module
-from .run import run_tests_command
 from .iterate import iterate_test_command
+from .run import run_tests_command
 
 app = typer.Typer(help="Work with tests", invoke_without_command=True, no_args_is_help=False)
 

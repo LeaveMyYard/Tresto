@@ -1,20 +1,24 @@
 from __future__ import annotations
 
-import textwrap
 from enum import StrEnum
-from pathlib import Path
+from typing import TYPE_CHECKING
 
-from langchain.chat_models.base import BaseChatModel
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import BaseMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, ConfigDict
 
 from tresto import __version__
-from tresto.core.config.main import TrestoConfig
-from tresto.core.test import TestRunResult
-
 from tresto.core.file_header import FileHeader, TrestoFileHeaderCorrupted
+from tresto.prompts import MAIN_PROMPT
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from langchain.chat_models.base import BaseChatModel
+
+    from tresto.core.config.main import TrestoConfig
+    from tresto.core.test import TestRunResult
 
 
 class Decision(StrEnum):
@@ -36,24 +40,6 @@ class RunningTestState(BaseModel):
     failed: int
 
 
-SYSTEM_PROMPT = textwrap.dedent(
-    """\
-        You are a CLI tool called Tresto. You write automatic E2E tests for web applications.
-        You are given a codegen file of user manually executing a test on his website.
-        Your task is to produce a complete, meaningful test for this website using pytest + Playwright async API.
-        Use robust selectors and proper waits, and meaningful expect() assertions.
-        If there is not enough information in the codegen file, prefer to:
-        - Go through files in the project directory and read their content / Visit the website and inspect it
-        - Ask the user for input
-        - Ask the user to record the test using playwright codegen (we don't really want to ask the user to do the same thing twice)
-        You will be running in the loop and will be able to select actions to take: 
-        write code, ask the user for input, ask the user to manually record the test using playwright codegen, etc.
-        Do not finish untill you have verified that the test is working or if you think that you are not able to finish it.
-        In case you are not able to finish it, you should explicitly say that you are not able to finish it to the user and why.
-    """
-)
-
-
 class TestAgentState(BaseModel):
     # Inputs
     test_name: str
@@ -63,7 +49,7 @@ class TestAgentState(BaseModel):
     config: TrestoConfig
 
     # Conversational context
-    messages: list[BaseMessage] = [SystemMessage(content=SYSTEM_PROMPT)]
+    messages: list[BaseMessage] = [SystemMessage(content=MAIN_PROMPT)]
 
     # Working artifacts
     last_run_result: TestRunResult | None = None

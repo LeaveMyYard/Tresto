@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import builtins
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from langgraph.graph import END, StateGraph
@@ -18,6 +17,7 @@ from .tools.run_test import run_test as tool_run_test
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from pathlib import Path
 
     from tresto.core.config.main import TrestoConfig
 

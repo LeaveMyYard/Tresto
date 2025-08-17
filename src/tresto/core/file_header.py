@@ -14,9 +14,9 @@ This is used to automatically save the AI information about the test.
 
 '''
 
-from datetime import datetime
 import re
 import textwrap
+from datetime import datetime
 from pathlib import Path
 from typing import Self
 
