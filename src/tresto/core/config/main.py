@@ -78,6 +78,7 @@ class TrestoConfig(BaseModel):
     ai: AIConfig
     browser: BrowserConfig | None = None
     recording: RecordingConfig | None = None
+    verbose: bool = True  # Show detailed code generation by default
 
     @classmethod
     def get_config_path(cls) -> Path:

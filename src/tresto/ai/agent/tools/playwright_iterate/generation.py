@@ -70,7 +70,18 @@ async def generate_playwright_code(state: TestAgentState, iteration_context: str
         )
     )
     
-    # Stream the response
+    # Check verbose setting
+    if not state.config.verbose:
+        console.print("🤖 Generating playwright automation code...")
+        # Generate without showing progress
+        ai_content = ""
+        async for chunk in llm.astream(state.all_messages + [generate_message]):
+            if chunk.content:
+                ai_content += chunk.content
+        console.print("✅ Playwright code generated")
+        return strip_markdown_code_fences(ai_content)
+    
+    # Verbose mode - show live progress
     ai_content = ""
     with Live(console=console, refresh_per_second=10) as live:
         async for chunk in llm.astream(state.all_messages + [generate_message]):
@@ -172,7 +183,18 @@ async def generate_soup_inspection_code(
         )
     )
     
-    # Stream the response
+    # Check verbose setting
+    if not state.config.verbose:
+        console.print("🔍 Generating page inspection code...")
+        # Generate without showing progress
+        ai_content = ""
+        async for chunk in llm.astream(state.all_messages + [inspect_message]):
+            if chunk.content:
+                ai_content += chunk.content
+        console.print("✅ Inspection code generated")
+        return strip_markdown_code_fences(ai_content)
+    
+    # Verbose mode - show live progress
     ai_content = ""
     with Live(console=console, refresh_per_second=10) as live:
         async for chunk in llm.astream(state.all_messages + [inspect_message]):
@@ -238,7 +260,18 @@ async def generate_investigation_report(state: TestAgentState, iterations: list[
         )
     )
     
-    # Generate report
+    # Check verbose setting
+    if not state.config.verbose:
+        console.print("📋 Generating investigation report...")
+        # Generate without showing progress
+        report_content = ""
+        async for chunk in llm.astream(state.all_messages + [report_message]):
+            if chunk.content:
+                report_content += chunk.content
+        console.print("✅ Investigation report generated")
+        return report_content
+    
+    # Verbose mode - show live progress
     report_content = ""
     with Live(console=console, refresh_per_second=10) as live:
         async for chunk in llm.astream(state.all_messages + [report_message]):
@@ -250,8 +283,91 @@ async def generate_investigation_report(state: TestAgentState, iterations: list[
                     title=f"📋 Generating Investigation Report ({len(report_content)} chars)",
                     title_align="left",
                     border_style="green",
-                    highlight=True,
                 )
                 live.update(panel)
     
     return report_content 
+
+
+async def generate_html_exploration_command(
+    state: TestAgentState, 
+    iteration_context: str = "", 
+    exploration_history: list[str] | None = None
+) -> str:
+    """Generate HTML exploration command using LLM."""
+    llm = state.create_llm()
+    
+    context_prompt = f"\nContext from previous action:\n{iteration_context}" if iteration_context else ""
+    
+    # Format exploration history
+    history_info = ""
+    if exploration_history:
+        history_str = '\n'.join([f"  {i+1}. {cmd}" for i, cmd in enumerate(exploration_history[-5:])])  # Last 5 commands
+        history_info = f"\n\nRecent exploration commands:\n{history_str}"
+    
+    explore_message = SystemMessage(
+        textwrap.dedent(
+            f"""\
+            You are exploring an HTML page structure using interactive commands with CSS selectors.
+            Issue ONE command at a time to investigate the page systematically.
+            {context_prompt}{history_info}
+            
+            AVAILABLE COMMANDS:
+            • show - Show collapsed HTML structure (start here)
+            • expand <css-selector> - Expand element step by step
+            • text <css-selector> - Show text content of element
+            • attrs <css-selector> - Show attributes of element
+            • finish - Complete exploration and generate report
+            • help - Show command help
+            
+            🎯 PROGRESSIVE NAVIGATION STRATEGY:
+            1. Start with 'show' to see the overall structure
+            2. Use 'expand body' to see what's in the body
+            3. Expand specific elements you can see: 'expand #root', 'expand .login-form'
+            4. Navigate step-by-step - don't guess deep nested paths
+            5. Use IDs and classes when available: '#id', '.class'
+            6. Use simple element names: 'form', 'input', 'button'
+            
+            AVOID:
+            • Complex nested selectors like 'body > div:nth-child(1) > div > form'
+            • Guessing element positions without seeing them first
+            • Deep paths before exploring intermediate levels
+            
+            PREFER:
+            • Simple selectors: 'body', '#root', '.container', 'form'
+            • Step-by-step exploration: expand what you can see
+            • Use specific IDs/classes shown in the previous results
+            
+            YOUR TASK:
+            Write ONE exploration command. Navigate progressively and use 'finish' when you have enough information.
+            """
+        )
+    )
+    
+    # Check verbose setting
+    if not state.config.verbose:
+        console.print("🔍 Generating exploration command...")
+        # Generate without showing progress
+        ai_content = ""
+        async for chunk in llm.astream(state.all_messages + [explore_message]):
+            if chunk.content:
+                ai_content += chunk.content
+        console.print("✅ Exploration command generated")
+        return ai_content.strip()
+    
+    # Verbose mode - show live progress
+    ai_content = ""
+    with Live(console=console, refresh_per_second=10) as live:
+        async for chunk in llm.astream(state.all_messages + [explore_message]):
+            if chunk.content:
+                ai_content += chunk.content
+                
+                panel = Panel(
+                    ai_content,
+                    title=f"🔍 Generating Exploration Command ({len(ai_content)} chars)",
+                    title_align="left",
+                    border_style="yellow",
+                )
+                live.update(panel)
+    
+    return ai_content.strip() 
