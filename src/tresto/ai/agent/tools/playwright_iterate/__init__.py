@@ -287,11 +287,14 @@ async def playwright_iterate_cycle(state: TestAgentState) -> TestAgentState:
         investigation_report = await generate_investigation_report(state, iterations)
     
     # Outside the context manager - local_messages are now cleared
-    # Add only the final report to messages (not the iteration details)
+    # Add only the final report to messages
     state.messages.append(SystemMessage(
-        content="Model investigated the website using playwright automation and generated the following report."
+        content="Model investigated the website and generated the following report."
     ))
     state.messages.append(SystemMessage(content=investigation_report))
+    
+    # Store the investigation in the database for future reference
+    state.test_database.store_playwright_investigation(investigation_report)
     
     console.print("✅ Playwright iteration cycle completed")
     console.print(f"📊 Total iterations: {len(iterations)}")

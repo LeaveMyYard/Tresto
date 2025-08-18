@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict
 from tresto import __version__
 from tresto.ai import prompts
 from tresto.core.config.main import TrestoConfig
+from tresto.core.database import TestDatabase
 from tresto.core.file_header import FileHeader, TrestoFileHeaderCorrupted
 from tresto.core.test import TestRunResult
 
@@ -61,6 +62,14 @@ class TestAgentState(BaseModel):
     iterations: int = 0
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    @property
+    def test_database(self) -> TestDatabase:
+        """Get the test database for persistent storage."""
+        return TestDatabase(
+            test_directory=self.config.project.test_directory,
+            test_name=self.test_name
+        )
 
     def create_llm(self: TestAgentState) -> BaseChatModel:
         if self.config.ai.connector.lower() in {"openai", "gpt"}:
@@ -135,13 +144,10 @@ class TestAgentState(BaseModel):
 
     @property
     def project_inspection_report(self) -> str | None:
-        try:
-            return FileHeader.read_from_file(self.test_file_path).project_inspection_report
-        except TrestoFileHeaderCorrupted:
-            return None
+        """Get the project inspection report from database."""
+        return self.test_database.get_project_inspection_report()
 
     @project_inspection_report.setter
     def project_inspection_report(self, value: str) -> None:
-        file = FileHeader.read_from_file(self.test_file_path)
-        file.project_inspection_report = value
-        file.write_to_file(self.test_file_path)
+        """Store the project inspection report in database."""
+        self.test_database.store_project_inspection_report(value)

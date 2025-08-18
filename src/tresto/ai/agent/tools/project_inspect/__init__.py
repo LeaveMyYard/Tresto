@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from langchain_core.messages import SystemMessage
@@ -9,10 +10,13 @@ from rich.console import Console
 from rich.panel import Panel
 
 from .execution import execute_file_exploration_command
-from .generation import generate_file_exploration_command, generate_inspection_goals, generate_inspection_report, generate_progress_reflection
+from .generation import (
+    generate_file_exploration_command,
+    generate_inspection_goals,
+    generate_inspection_report,
+    generate_progress_reflection,
+)
 from .models import FileExplorationData
-from tresto.core.file_header import FileHeader
-from pathlib import Path
 
 if TYPE_CHECKING:
     from tresto.ai.agent.state import TestAgentState
@@ -29,25 +33,17 @@ async def _execute_file_exploration_cycle(
     """Execute the file exploration cycle until model decides to finish."""
     
     # Check if we already have a project inspection report
-    if (state.test_file_path.exists() and 
-        hasattr(state, 'current_test_code') and 
-        state.current_test_code):
-        try:
-            from tresto.core.file_header import FileHeader
-            file_header = FileHeader.read_from_file(state.test_file_path)
-            if file_header.project_inspection_report:
-                console.print("📁 Found existing project inspection report")
-                console.print(Panel(
-                    file_header.project_inspection_report,
-                    title="📁 Existing Project Inspection Report",
-                    title_align="left",
-                    border_style="green",
-                    padding=(1, 2)
-                ))
-                return "existing_report", file_header.project_inspection_report, True
-        except Exception:  # noqa: BLE001
-            # If we can't read the existing report, continue with new inspection
-            pass
+    existing_report = state.project_inspection_report
+    if existing_report:
+        console.print("📁 Found existing project inspection report")
+        console.print(Panel(
+            existing_report,
+            title="📁 Existing Project Inspection Report",
+            title_align="left",
+            border_style="green",
+            padding=(1, 2)
+        ))
+        return "existing_report", existing_report, True
     
     # Define inspection goals at the start
     console.print("🎯 Setting project inspection goals...")
@@ -83,7 +79,7 @@ async def _execute_file_exploration_cycle(
                 console.print("🏁 Model decided to finish based on reflection")
                 final_output = f"Reflection after {exploration_attempt - 1} attempts:\n\n{reflection}"
                 return reflection, final_output, True
-            elif "CONTINUE:" in reflection.upper():
+            if "CONTINUE:" in reflection.upper():
                 console.print("🔄 Model decided to continue exploration")
                 continue_reason = reflection.split("CONTINUE:")[-1].strip()
                 exploration_context = f"Continuing exploration because: {continue_reason}"
@@ -190,7 +186,7 @@ async def project_inspect_cycle(state: TestAgentState) -> TestAgentState:
         
         # Single iteration for file exploration
         iteration_num = 1
-        console.print(f"\n--- Project Inspection ---")
+        console.print("\n--- Project Inspection ---")
         
         # Execute file exploration cycle
         final_exploration_code, final_exploration_output, exploration_success = await _execute_file_exploration_cycle(

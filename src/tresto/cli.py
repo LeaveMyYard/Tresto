@@ -4,6 +4,11 @@ import typer
 from rich.console import Console
 
 from . import __version__
+from .commands import models
+from .commands import test as test_commands
+from .commands.db import app as db_app
+from .commands.hello import hello_command
+from .commands.init import init_command
 
 console = Console()
 app = typer.Typer(
@@ -41,25 +46,16 @@ def main(
     not just your clicks. Built on Playwright with Claude AI integration.
     """
     if ctx.invoked_subcommand is None:
-        # Show hello command when no subcommand is provided
-        from .commands.hello import hello_command
-
         hello_command()
 
 
 # Import and register commands after app creation to avoid circular imports
 def register_commands() -> None:
     """Register CLI commands."""
-    try:
-        from .commands import models
-        from .commands import test as test_commands
-        from .commands.init import init_command
-
-        app.command("init", help="Initialize Tresto in your project")(init_command)
-        app.add_typer(models.app, name="models")
-        app.add_typer(test_commands.app, name="test")
-    except ImportError as e:
-        console.print(f"[red]Warning: Could not load all commands: {e}[/red]")
+    app.command("init", help="Initialize Tresto in your project")(init_command)
+    app.add_typer(models.app, name="models")
+    app.add_typer(test_commands.app, name="test")
+    app.add_typer(db_app, name="db")
 
 
 # Register commands when module is imported
