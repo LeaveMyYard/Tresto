@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 console = Console()
 
 
-def _count_directory_elements(path: Path, max_depth: int = 3, current_depth: int = 0) -> tuple[int, int]:
+def _count_directory_elements(path: Path, max_depth: int = 2, current_depth: int = 0) -> tuple[int, int]:
     """Count directories and total elements in the directory tree."""
     if current_depth >= max_depth:
         return 0, 0
@@ -46,7 +46,7 @@ def _count_directory_elements(path: Path, max_depth: int = 3, current_depth: int
         return 0, 0
 
 
-def _build_directory_tree(path: Path, prefix: str = "", max_depth: int = 3, current_depth: int = 0) -> str:
+def _build_directory_tree(path: Path, prefix: str = "", max_depth: int = 2, current_depth: int = 0) -> str:
     """Build a directory tree representation."""
     if current_depth >= max_depth:
         return f"{prefix}[...] (max depth reached)\n"
@@ -193,7 +193,7 @@ async def list_directory(state: TestAgentState) -> TestAgentState:
         )
         console.print(error_panel)
         result_message = f"Error: Permission denied accessing directory '{dir_path}'."
-    except Exception as e:
+    except Exception as e:  # ignore: BLE-001
         error_panel = Panel(
             f"Error listing directory '{dir_path}': {e}",
             title="❌ Unexpected Error",

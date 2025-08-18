@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict
 
 from tresto import __version__
 from tresto.core.file_header import FileHeader, TrestoFileHeaderCorrupted
-from tresto.prompts import MAIN_PROMPT
+from tresto.ai import prompts
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -49,7 +49,7 @@ class TestAgentState(BaseModel):
     config: TrestoConfig
 
     # Conversational context
-    messages: list[BaseMessage] = [SystemMessage(content=MAIN_PROMPT)]
+    messages: list[BaseMessage] = [SystemMessage(content=prompts.MAIN_PROMPT)]
 
     # Working artifacts
     last_run_result: TestRunResult | None = None
