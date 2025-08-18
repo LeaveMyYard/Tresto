@@ -12,6 +12,7 @@ from .tools.deside_next_action import tool_decide_next_action
 from .tools.generate import generate_or_update_code
 from .tools.list_directory import list_directory
 from .tools.playwright_codegen import tool_record_user_input
+from .tools.playwright_iterate import playwright_iterate_cycle
 from .tools.read_file_content import read_file_content
 from .tools.run_test import run_test as tool_run_test
 
@@ -67,6 +68,7 @@ class LangGraphTestAgent:
         graph.add_node(Decision.RUN_TEST, tool_run_test)
         graph.add_node(Decision.READ_FILE_CONTENT, read_file_content)
         graph.add_node(Decision.LIST_DIRECTORY, list_directory)
+        graph.add_node(Decision.PLAYWRIGHT_ITERATE, playwright_iterate_cycle)
         # graph.add_node(Decision.INSPECT_SITE, tool_inspect)
         graph.add_node(Decision.ASK_USER, tool_ask_user)
 

@@ -5,6 +5,7 @@ __all__ = [
     "generate",
     "inspect",
     "list_directory",
+    "playwright_iterate",
     "read_file_content",
     "run_test",
 ]

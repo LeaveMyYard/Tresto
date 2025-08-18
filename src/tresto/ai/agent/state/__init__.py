@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from enum import StrEnum
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from langchain_anthropic import ChatAnthropic
@@ -9,16 +11,15 @@ from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, ConfigDict
 
 from tresto import __version__
-from tresto.core.file_header import FileHeader, TrestoFileHeaderCorrupted
 from tresto.ai import prompts
+from tresto.core.config.main import TrestoConfig
+from tresto.core.file_header import FileHeader, TrestoFileHeaderCorrupted
+from tresto.core.test import TestRunResult
 
 if TYPE_CHECKING:
-    from pathlib import Path
+    from collections.abc import Iterator
 
     from langchain.chat_models.base import BaseChatModel
-
-    from tresto.core.config.main import TrestoConfig
-    from tresto.core.test import TestRunResult
 
 
 class Decision(StrEnum):
@@ -29,6 +30,7 @@ class Decision(StrEnum):
     MODIFY_CODE = "modify_code"
     READ_FILE_CONTENT = "read_file_content"
     LIST_DIRECTORY = "list_directory"
+    PLAYWRIGHT_ITERATE = "playwright_iterate"
     # INSPECT_SITE = "inspect_site"
     FINISH = "finish"
 
@@ -50,6 +52,7 @@ class TestAgentState(BaseModel):
 
     # Conversational context
     messages: list[BaseMessage] = [SystemMessage(content=prompts.MAIN_PROMPT)]
+    local_messages: list[BaseMessage] = []  # Temporary messages for tools
 
     # Working artifacts
     last_run_result: TestRunResult | None = None
@@ -63,6 +66,19 @@ class TestAgentState(BaseModel):
             return ChatOpenAI(model=self.config.ai.model, temperature=self.config.ai.temperature)
 
         return ChatAnthropic(model_name=self.config.ai.model, temperature=self.config.ai.temperature)
+
+    @property
+    def all_messages(self) -> list[BaseMessage]:
+        """Get all messages including local messages for LLM context."""
+        return self.messages + self.local_messages
+
+    @contextmanager
+    def temporary_messages(self) -> Iterator[None]:
+        """Context manager to automatically clear local_messages when exiting."""
+        try:
+            yield
+        finally:
+            self.local_messages.clear()
 
     @property
     def current_state_message(self) -> SystemMessage:
