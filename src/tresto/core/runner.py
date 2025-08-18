@@ -118,5 +118,5 @@ class TrestoRunner(BaseModel):
             test_instructions=self._test_description,
             recording_file_path=self._pathfinder.recording_file_path,
         )
-
+        await agent.init()
         await agent.run()

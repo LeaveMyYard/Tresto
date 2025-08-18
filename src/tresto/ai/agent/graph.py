@@ -13,6 +13,7 @@ from .tools.generate import generate_or_update_code
 from .tools.list_directory import list_directory
 from .tools.playwright_codegen import tool_record_user_input
 from .tools.playwright_iterate import playwright_iterate_cycle
+from .tools.project_inspect import project_inspect_cycle
 from .tools.read_file_content import read_file_content
 from .tools.run_test import run_test as tool_run_test
 
@@ -59,6 +60,13 @@ class LangGraphTestAgent:
 
         self.state.messages.append(self.state.current_state_message)
 
+    async def init(self) -> None:
+        if self.state.current_recording_code is None:
+            await tool_record_user_input(self.state)
+        
+        if self.state.project_inspection_report is None:
+            await project_inspect_cycle(self.state)
+
         # Build graph with logging wrappers
         graph = StateGraph(TestAgentState)
 
@@ -69,12 +77,11 @@ class LangGraphTestAgent:
         graph.add_node(Decision.READ_FILE_CONTENT, read_file_content)
         graph.add_node(Decision.LIST_DIRECTORY, list_directory)
         graph.add_node(Decision.PLAYWRIGHT_ITERATE, playwright_iterate_cycle)
+        graph.add_node(Decision.PROJECT_INSPECT, project_inspect_cycle)
         # graph.add_node(Decision.INSPECT_SITE, tool_inspect)
         graph.add_node(Decision.ASK_USER, tool_ask_user)
 
-        graph.set_entry_point(
-            Decision.DESIDE_NEXT_ACTION if self.state.current_recording_code is not None else Decision.RECORD_USER_INPUT
-        )
+        graph.set_entry_point(Decision.DESIDE_NEXT_ACTION)
 
         for node in set(Decision) - {Decision.FINISH, Decision.DESIDE_NEXT_ACTION}:
             graph.add_edge(node, Decision.DESIDE_NEXT_ACTION)
@@ -94,7 +101,7 @@ class LangGraphTestAgent:
 
     async def run(self) -> None:
         try:
-            await self._app.ainvoke(self.state)
+            await self._app.ainvoke(self.state, {"recursion_limit": 100})
         except Exception:  # noqa: BLE001
             self._console.print_exception()
         else:

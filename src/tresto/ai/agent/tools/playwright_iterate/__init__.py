@@ -10,7 +10,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from .execution import execute_html_exploration_command, execute_playwright_code
-from .generation import generate_html_exploration_command, generate_investigation_report, generate_playwright_code
+from .generation import generate_html_exploration_command, generate_investigation_report, generate_playwright_code, generate_investigation_goals, generate_progress_reflection
 from .models import IterationData
 
 if TYPE_CHECKING:
@@ -82,13 +82,38 @@ async def _execute_inspection_cycle(
     """Execute the HTML exploration cycle until model decides to finish."""
     soup = BeautifulSoup(page_html, 'html.parser')
     
+    # Define investigation goals at the start
+    console.print("🎯 Setting investigation goals for this exploration...")
+    investigation_goals = await generate_investigation_goals(state)
+    
     inspection_context = iteration_context
     inspection_attempt = 0
     exploration_history: list[str] = []  # Track exploration commands
+    findings_history: list[str] = []  # Track what we've discovered
     MAX_EXPLORATION_ATTEMPTS = 150  # Prevent infinite loops
+    REFLECTION_INTERVAL = 10  # Reflect every 10 attempts
     
     while inspection_attempt < MAX_EXPLORATION_ATTEMPTS:
         inspection_attempt += 1
+        
+        # Periodic reflection every 10 attempts
+        if inspection_attempt > 1 and (inspection_attempt - 1) % REFLECTION_INTERVAL == 0:
+            console.print(f"\n🤔 Time for progress reflection (after {inspection_attempt - 1} attempts)...")
+            reflection = await generate_progress_reflection(
+                state, investigation_goals, inspection_attempt - 1, findings_history
+            )
+            
+            # Check if model decided to finish based on reflection
+            if "FINISH:" in reflection.upper():
+                console.print("🏁 Model decided to finish based on reflection")
+                final_output = f"Reflection after {inspection_attempt - 1} attempts:\n\n{reflection}"
+                return reflection, final_output, True
+            elif "CONTINUE:" in reflection.upper():
+                console.print("🔄 Model decided to continue exploration")
+                # Extract reasoning and add to context
+                continue_reason = reflection.split("CONTINUE:")[-1].strip()
+                inspection_context = f"Continuing exploration because: {continue_reason}"
+        
         if state.config.verbose:
             console.print(f"🔍 Generating exploration command (attempt {inspection_attempt}/{MAX_EXPLORATION_ATTEMPTS})...")
         else:
@@ -127,6 +152,11 @@ async def _execute_inspection_cycle(
         
         if exploration_result.success:
             console.print("✅ Exploration completed")
+            
+            # Track findings for reflection
+            output_summary = exploration_result.output[:100] + "..." if len(exploration_result.output) > 100 else exploration_result.output
+            findings_history.append(f"Command '{actual_command}': {output_summary}")
+            
             if state.config.verbose:
                 # Show full exploration results wrapped in a panel
                 console.print("🔍 Exploration results:")
@@ -136,7 +166,6 @@ async def _execute_inspection_cycle(
                     title_align="left",
                     border_style="blue",
                     padding=(1, 2),
-                    expand=False
                 ))
             
             # Check if model finished exploration
@@ -157,6 +186,9 @@ async def _execute_inspection_cycle(
         state.local_messages.append(SystemMessage(
             content=f"Iteration {iteration_num}, exploration attempt {inspection_attempt}: Failed with error: {exploration_result.error}"
         ))
+        
+        # Track failed attempts
+        findings_history.append(f"FAILED Command '{actual_command}': {exploration_result.error}")
         
         # Update context for next attempt
         inspection_context = f"Previous exploration attempt failed with error: {exploration_result.error}\n\nPlease try a different command."

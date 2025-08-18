@@ -31,6 +31,7 @@ class Decision(StrEnum):
     READ_FILE_CONTENT = "read_file_content"
     LIST_DIRECTORY = "list_directory"
     PLAYWRIGHT_ITERATE = "playwright_iterate"
+    PROJECT_INSPECT = "project_inspect"
     # INSPECT_SITE = "inspect_site"
     FINISH = "finish"
 
@@ -131,3 +132,16 @@ class TestAgentState(BaseModel):
     def current_recording_code(self, value: str) -> None:
         with open(self.recording_file_path, "w") as f:
             f.write(value)
+
+    @property
+    def project_inspection_report(self) -> str | None:
+        try:
+            return FileHeader.read_from_file(self.test_file_path).project_inspection_report
+        except TrestoFileHeaderCorrupted:
+            return None
+
+    @project_inspection_report.setter
+    def project_inspection_report(self, value: str) -> None:
+        file = FileHeader.read_from_file(self.test_file_path)
+        file.project_inspection_report = value
+        file.write_to_file(self.test_file_path)

@@ -371,3 +371,133 @@ async def generate_html_exploration_command(
                 live.update(panel)
     
     return ai_content.strip() 
+
+
+async def generate_investigation_goals(state: TestAgentState) -> str:
+    """Generate investigation goals for the playwright exploration cycle."""
+    llm = state.create_llm()
+    
+    goals_message = SystemMessage(
+        textwrap.dedent(
+            f"""\
+            You are about to start exploring a web page using playwright automation and HTML inspection.
+            Before beginning exploration, you need to define clear investigation goals.
+            
+            Current context:
+            - Test name: {state.test_name}
+            - Test instructions: {state.test_instructions}
+            
+            YOUR TASK:
+            Define 2-4 specific investigation goals for this web page exploration.
+            Focus on what you need to discover to write effective tests.
+            
+            Example goals:
+            • "Find and understand the login form structure (inputs, validation, submit process)"
+            • "Locate navigation elements and understand the site structure"
+            • "Identify interactive elements that need testing (buttons, forms, modals)"
+            • "Understand the page layout and key user interface components"
+            
+            Write your investigation goals clearly, one per line, starting with "Goal:".
+            Be specific about what you want to learn about this web application.
+            """
+        )
+    )
+    
+    # Check verbose setting
+    if not state.config.verbose:
+        console.print("🎯 Defining investigation goals...")
+        # Generate without showing progress
+        goals_content = ""
+        async for chunk in llm.astream(state.all_messages + [goals_message]):
+            if chunk.content:
+                goals_content += chunk.content
+        console.print("✅ Investigation goals defined")
+        return goals_content.strip()
+    
+    # Verbose mode - show live progress
+    goals_content = ""
+    with Live(console=console, refresh_per_second=10) as live:
+        async for chunk in llm.astream(state.all_messages + [goals_message]):
+            if chunk.content:
+                goals_content += chunk.content
+                
+                panel = Panel(
+                    goals_content,
+                    title="🎯 Defining Investigation Goals",
+                    title_align="left",
+                    border_style="cyan",
+                    padding=(1, 2),
+                )
+                live.update(panel)
+    
+    return goals_content.strip()
+
+
+async def generate_progress_reflection(
+    state: TestAgentState, 
+    investigation_goals: str,
+    exploration_attempts: int,
+    recent_findings: list[str]
+) -> str:
+    """Generate a reflection on progress toward investigation goals."""
+    llm = state.create_llm()
+    
+    findings_summary = '\n'.join([f"- {finding}" for finding in recent_findings[-10:]])  # Last 10 findings
+    
+    reflection_message = SystemMessage(
+        textwrap.dedent(
+            f"""\
+            You have been exploring a web page for {exploration_attempts} attempts.
+            Time to reflect on your progress toward your investigation goals.
+            
+            YOUR ORIGINAL INVESTIGATION GOALS:
+            {investigation_goals}
+            
+            RECENT EXPLORATION FINDINGS:
+            {findings_summary}
+            
+            YOUR TASK:
+            Reflect on your progress and decide whether to continue or finish exploration.
+            
+            Think verbosely about:
+            1. Which goals have you accomplished or made progress on?
+            2. What important information are you still missing?
+            3. Have you discovered the key elements needed for testing?
+            4. Are you getting diminishing returns from continued exploration?
+            
+            Based on your reflection, end with either:
+            - "CONTINUE: [reason why you need to keep exploring]"
+            - "FINISH: [explanation of why you have enough information]"
+            
+            Be honest about whether continued exploration will be productive.
+            """
+        )
+    )
+    
+    # Check verbose setting
+    if not state.config.verbose:
+        console.print("🤔 Reflecting on investigation progress...")
+        # Generate without showing progress
+        reflection_content = ""
+        async for chunk in llm.astream(state.all_messages + [reflection_message]):
+            if chunk.content:
+                reflection_content += chunk.content
+        console.print("✅ Progress reflection completed")
+        return reflection_content.strip()
+    
+    # Verbose mode - show live progress
+    reflection_content = ""
+    with Live(console=console, refresh_per_second=10) as live:
+        async for chunk in llm.astream(state.all_messages + [reflection_message]):
+            if chunk.content:
+                reflection_content += chunk.content
+                
+                panel = Panel(
+                    reflection_content,
+                    title=f"🤔 Progress Reflection (After {exploration_attempts} Attempts)",
+                    title_align="left",
+                    border_style="yellow",
+                )
+                live.update(panel)
+    
+    return reflection_content.strip() 
