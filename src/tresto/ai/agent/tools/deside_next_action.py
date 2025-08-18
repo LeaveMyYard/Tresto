@@ -36,7 +36,8 @@ async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
                 You are required to decide the next action to take in a test.
                 Available actions are: {" ".join(f"- {action.value}" for action in available_actions)}
                 With the next message, verbosely think about what to choose.
-                The last line should contain the action you want to take and nothing else.
+                The last line should contain ONLY the action name (e.g., "read_file_content") and nothing else.
+                Do NOT use function call syntax like "read_file_content('/path/to/file')".
             """
         )
     )
@@ -70,6 +71,17 @@ async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
     
     messages.append(AIMessage(content=reasoning_content))
     decision = reasoning_content.split("\n")[-1].strip()
+    
+    # Handle function-style commands by extracting the action name
+    original_decision = decision
+    if "(" in decision and decision.endswith(")"):
+        # Extract function name from function call syntax
+        function_name = decision.split("(")[0].strip()
+        # Check if this function name matches any available action
+        for action in available_actions:
+            if function_name == action.value:
+                decision = action.value
+                break
 
     while True:
         try:
@@ -85,7 +97,7 @@ async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
                 SystemMessage(
                     f"Invalid action: {decision}. "
                     f"Available actions are: {'\n'.join(f'- {action.value}' for action in available_actions)}"
-                    f"\nTry again with the correct action and nothing else."
+                    f"\nProvide ONLY the action name (e.g., 'read_file_content') and nothing else. No function call syntax."
                 )
             )
             
@@ -112,6 +124,14 @@ async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
             
             console.print()  # Add spacing after retry streaming completes
             decision = retry_content.split("\n")[-1].strip()
+            
+            # Handle function-style commands in retry as well
+            if "(" in decision and decision.endswith(")"):
+                function_name = decision.split("(")[0].strip()
+                for action in available_actions:
+                    if function_name == action.value:
+                        decision = action.value
+                        break
         else:
             break
 
