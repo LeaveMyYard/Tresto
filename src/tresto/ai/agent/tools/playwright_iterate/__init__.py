@@ -40,12 +40,47 @@ async def _execute_playwright_iteration(
         headless=state.config.browser.headless if state.config.browser else True
     )
     
-    if not playwright_result.success:
+    if playwright_result.page_html:
+        # Page HTML is available - proceed with investigation regardless of success/failure
+        if not playwright_result.success:
+            console.print(f"❌ Playwright execution failed: {playwright_result.error_message}")
+            console.print("📄 Page HTML available despite failure - proceeding with investigation")
+            
+            # Add failed iteration to local messages for context
+            state.local_messages.append(SystemMessage(
+                content=f"Iteration {iteration_num}: Playwright execution failed with error: {playwright_result.error_message}. "
+                f"However, page HTML is available for investigation."
+            ))
+        else:
+            console.print("✅ Playwright code executed successfully")
+            
+            # Add successful iteration to local messages for context
+            state.local_messages.append(SystemMessage(
+                content=f"Iteration {iteration_num}: Playwright execution succeeded. Proceeding with page investigation."
+            ))
+        
+        # Store iteration data (success or failure doesn't matter for inspection)
+        iteration_data = IterationData(
+            playwright_code=playwright_code,
+            playwright_success=playwright_result.success,
+            playwright_error=playwright_result.error_message,
+            inspection_code="",  # Will be filled by inspection
+            inspection_success=False,  # Will be updated
+            inspection_output="",  # Will be updated
+            inspection_error=None  # Will be updated
+        )
+        
+        # Always return as "success" since we have page HTML to investigate
+        return True, playwright_result.page_html, iteration_data
+    else:
+        # No page HTML available at all - truly failed iteration
         console.print(f"❌ Playwright execution failed: {playwright_result.error_message}")
+        console.print("❌ No page HTML available for investigation")
         
         # Add failed iteration to local messages for context
         state.local_messages.append(SystemMessage(
-            content=f"Iteration {iteration_num}: Playwright execution failed with error: {playwright_result.error_message}"
+            content=f"Iteration {iteration_num}: Playwright execution failed with error: {playwright_result.error_message}. "
+            f"No page HTML is available for investigation."
         ))
         
         # Store failed iteration
@@ -60,17 +95,6 @@ async def _execute_playwright_iteration(
         )
         
         return False, f"Previous playwright execution failed: {playwright_result.error_message}", failed_iteration
-    
-    console.print("✅ Playwright code executed successfully")
-    return True, playwright_result.page_html, IterationData(
-        playwright_code=playwright_code,
-        playwright_success=True,
-        playwright_error=None,
-        inspection_code="",  # Will be filled by inspection
-        inspection_success=False,  # Will be updated
-        inspection_output="",  # Will be updated
-        inspection_error=None  # Will be updated
-    )
 
 
 async def _execute_inspection_cycle(
@@ -262,11 +286,14 @@ async def playwright_iterate_cycle(state: TestAgentState) -> TestAgentState:
             
             iterations.append(iteration_data)
             
-            # Add successful iteration details to local messages for context
+            # Add iteration details to local messages for context
+            playwright_status = "✅ Success" if iteration_data.playwright_success else f"❌ Failed: {iteration_data.playwright_error}"
+            inspection_status = "✅ Success" if inspection_success else "❌ Failed"
+            
             state.local_messages.append(SystemMessage(
                 content=f"Iteration {iteration_num} completed:\n"
-                f"- Playwright code executed: ✅ Success\n"
-                f"- Page inspection: ✅ Success\n"
+                f"- Playwright code executed: {playwright_status}\n"
+                f"- Page inspection: {inspection_status}\n"
                 f"- Inspection findings: {final_inspection_output[:300]}{'...' if len(final_inspection_output) > 300 else ''}"
             ))
             

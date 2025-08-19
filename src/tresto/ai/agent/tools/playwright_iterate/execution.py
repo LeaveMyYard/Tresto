@@ -209,54 +209,65 @@ async def execute_playwright_code(
     headless: bool = True
 ) -> PlaywrightExecutionResult:
     """Execute playwright code and return result with page snapshot."""
-    try:
-        # Create a clean namespace for execution
-        namespace: dict[str, Any] = {}
+    page_html = None
+    error_message = None
+
+    # Create a clean namespace for execution
+    namespace: dict[str, Any] = {}
+    
+    # Execute the user code in the namespace (including their imports)
+    exec(code, namespace)
+    
+    # Look for an async function to run (typically 'run' or 'main')
+    async_func = namespace.get('run') or namespace.get('main')
+    if not async_func or not callable(async_func):
+        return PlaywrightExecutionResult(
+            success=False, 
+            error_message="No 'run' or 'main' async function found in the code"
+        )
+    
+    # Execute with playwright context
+    async with async_playwright() as pw:
+        browser = await pw.chromium.launch(headless=headless)
+        context = await browser.new_context()
+        page = await context.new_page()
         
-        # Execute the user code in the namespace (including their imports)
-        exec(code, namespace)
+        # Patch page.close() to prevent the model from closing the page
+        original_close = page.close
+        async def patched_close():
+            # Do nothing - we need the page open for inspection
+            pass
+        page.close = patched_close
         
-        # Look for an async function to run (typically 'run' or 'main')
-        async_func = namespace.get('run') or namespace.get('main')
-        if not async_func or not callable(async_func):
-            return PlaywrightExecutionResult(
-                success=False, 
-                error_message="No 'run' or 'main' async function found in the code"
-            )
+        if base_url:
+            await page.goto(base_url)
         
-        # Execute with playwright context
-        page_html = None
-        async with async_playwright() as pw:
-            browser = await pw.chromium.launch(headless=headless)
-            context = await browser.new_context()
-            page = await context.new_page()
-            
-            # Patch page.close() to prevent the model from closing the page
-            original_close = page.close
-            async def patched_close():
-                # Do nothing - we need the page open for inspection
-                pass
-            page.close = patched_close
-            
-            if base_url:
-                await page.goto(base_url)
-            
+        try:
             # Execute the user's function
             await async_func(page)
-            
-            # Capture page HTML for snapshot
+        except Exception as e:  # noqa: BLE001
+            # Capture the error but continue to get page HTML
+            error_message = str(e)
+        
+        # Always capture page HTML for investigation, even if execution failed
+        try:
             page_html = await page.content()
-            
-            # Restore original close method
-            page.close = original_close
-            
-            await browser.close()
+        except Exception:  # noqa: BLE001
+            # If we can't get page content, at least we tried
+            pass
         
-        return PlaywrightExecutionResult(success=True, page_html=page_html)
+        # Restore original close method
+        page.close = original_close
         
-    except Exception as e:  # noqa: BLE001
-        # Catch ALL exceptions and provide them as feedback to the model
-        return PlaywrightExecutionResult(success=False, error_message=str(e))
+        await browser.close()
+    
+    # Return success=True if no error, success=False if there was an error
+    # But always include page_html if we managed to capture it
+    return PlaywrightExecutionResult(
+        success=error_message is None, 
+        page_html=page_html,
+        error_message=error_message
+    )
 
 
 def execute_html_exploration_command(

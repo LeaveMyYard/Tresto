@@ -254,6 +254,21 @@ async def generate_investigation_report(state: TestAgentState, iterations: list[
             4. Any issues or errors encountered
             5. Recommendations for test automation
             6. Overall assessment of the application's testability
+            7. Exact HTML examples of elements required for testing (collapsed format, without unrelated children/parents) - include specific selectors, attributes, and structure needed for automation
+            
+            For section 7, provide concrete HTML examples like:
+            ```html
+            <form id="login-form" class="auth-form">
+                <div class="notifications-container">
+                    ... <!-- This can be removed, as it is not relevant for initial goal -->
+                </div>
+                <input type="email" name="email" placeholder="Email" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <button type="submit" class="btn-primary">Login</button>
+            </form>
+            ```
+            
+            Include the most reliable selectors for each element (ID, class, data attributes, etc.).
             
             Write a clear, structured investigation report.
             """
@@ -379,25 +394,18 @@ async def generate_investigation_goals(state: TestAgentState) -> str:
     
     goals_message = SystemMessage(
         textwrap.dedent(
-            f"""\
+            """\
             You are about to start exploring a web page using playwright automation and HTML inspection.
             Before beginning exploration, you need to define clear investigation goals.
             
-            Current context:
-            - Test name: {state.test_name}
-            - Test instructions: {state.test_instructions}
-            
             YOUR TASK:
-            Define 2-4 specific investigation goals for this web page exploration.
-            Focus on what you need to discover to write effective tests.
+            Define 1-2 specific investigation goals for this web page exploration.
             
             Example goals:
-            • "Find and understand the login form structure (inputs, validation, submit process)"
-            • "Locate navigation elements and understand the site structure"
-            • "Identify interactive elements that need testing (buttons, forms, modals)"
-            • "Understand the page layout and key user interface components"
+            • "Find what is the html structure of the login container"
+            • "What sidebar elements are there after login"
             
-            Write your investigation goals clearly, one per line, starting with "Goal:".
+            Write your investigation goals clearly, one per line.
             Be specific about what you want to learn about this web application.
             """
         )
