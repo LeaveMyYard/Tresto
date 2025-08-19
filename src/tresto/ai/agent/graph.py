@@ -59,6 +59,7 @@ class LangGraphTestAgent:
         )
 
         self.state.messages.append(self.state.current_state_message)
+        self.state.messages.extend(self.state.test_database.to_prompt())
 
     async def init(self) -> None:
         if self.state.current_recording_code is None:

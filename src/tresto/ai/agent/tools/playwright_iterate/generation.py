@@ -464,6 +464,7 @@ async def generate_progress_reflection(
             2. What important information are you still missing?
             3. Have you discovered the key elements needed for testing?
             4. Are you getting diminishing returns from continued exploration?
+            5. If some required elements could not be found, despite that they should be there, consider the case where this element is flaky and if it is logical to finish with information that this exact element is not stable and to try to search for another way of conducting the test
             
             Based on your reflection, end with either:
             - "CONTINUE: [reason why you need to keep exploring]"

@@ -28,7 +28,7 @@ async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
 
     # If the user already recorded the test, let's not ask him to do it again
     if state.current_recording_code is not None:
-        available_actions.add(Decision.RECORD_USER_INPUT)
+        available_actions.remove(Decision.RECORD_USER_INPUT)
 
     message = SystemMessage(
         textwrap.dedent(
