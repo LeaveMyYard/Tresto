@@ -43,6 +43,7 @@ dependencies = [
     "langgraph>=0.6.4",
     "beautifulsoup4>=4.12.0",
     "pillow>=11.3.0",
+    "pytest>=8.4.1",
 ]
 
 [project.optional-dependencies]
@@ -99,6 +100,7 @@ ignore = [
     "E501",  # line too long, handled by ruff format
     "B008",  # do not perform function calls in argument defaults
     "C901",  # too complex
+    "TC002", # Move imports into TYPE_CHECKING block. Does not work good with pydantic
 ]
 
 [tool.ruff.lint.per-file-ignores]

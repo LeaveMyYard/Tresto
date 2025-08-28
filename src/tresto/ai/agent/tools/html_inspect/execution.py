@@ -2,28 +2,11 @@
 
 from __future__ import annotations
 
-import re
 from typing import Any
 
 from bs4 import BeautifulSoup, NavigableString
-from playwright.async_api import async_playwright
-from rich.console import Console
-from rich.panel import Panel
 
-from .models import InspectionResult, PlaywrightExecutionResult
-
-
-def strip_markdown_code_fences(text: str) -> str:
-    """Extract Python code from markdown fences."""
-    pattern = re.compile(r"```\s*(?:python|py)?\s*\n([\s\S]*?)\n```", re.IGNORECASE)
-    m = pattern.search(text)
-    if m:
-        return m.group(1).strip()
-    pattern2 = re.compile(r"^```\s*\n?([\s\S]*?)\n?```\s*$", re.IGNORECASE)
-    m2 = pattern2.match(text.strip())
-    if m2:
-        return m2.group(1).strip()
-    return text.strip()
+from .models import InspectionResult
 
 
 def _generate_collapsed_html_view(soup: BeautifulSoup, max_depth: int = 2) -> str:
@@ -196,78 +179,14 @@ def _get_navigation_suggestions(soup: BeautifulSoup, failed_selector: str) -> st
     
     # Look for elements with IDs
     elements_with_ids = soup.find_all(attrs={'id': True})
-    for elem in elements_with_ids[:2]:  # First 2 elements with IDs
-        if hasattr(elem, 'attrs') and 'id' in elem.attrs:
-            suggestions.append(f"• expand #{elem.attrs['id']} (by ID)")
+    suggestions.extend([
+        f"• expand #{elem.attrs['id']} (by ID)"
+        for elem in elements_with_ids[:2]  # First 2 elements with IDs
+        if hasattr(elem, 'attrs') and 'id' in elem.attrs
+    ])
     
-    return '\n'.join(suggestions[:6]) if suggestions else "• Try 'expand body' or 'show' to see structure"
-
-
-async def execute_playwright_code(
-    code: str, 
-    base_url: str | None = None, 
-    headless: bool = True
-) -> PlaywrightExecutionResult:
-    """Execute playwright code and return result with page snapshot."""
-    page_html = None
-    error_message = None
-
-    # Create a clean namespace for execution
-    namespace: dict[str, Any] = {}
-    
-    # Execute the user code in the namespace (including their imports)
-    exec(code, namespace)
-    
-    # Look for an async function to run (typically 'run' or 'main')
-    async_func = namespace.get('run') or namespace.get('main')
-    if not async_func or not callable(async_func):
-        return PlaywrightExecutionResult(
-            success=False, 
-            error_message="No 'run' or 'main' async function found in the code"
-        )
-    
-    # Execute with playwright context
-    async with async_playwright() as pw:
-        browser = await pw.chromium.launch(headless=headless)
-        context = await browser.new_context()
-        page = await context.new_page()
-        
-        # Patch page.close() to prevent the model from closing the page
-        original_close = page.close
-        async def patched_close():
-            # Do nothing - we need the page open for inspection
-            pass
-        page.close = patched_close
-        
-        if base_url:
-            await page.goto(base_url)
-        
-        try:
-            # Execute the user's function
-            await async_func(page)
-        except Exception as e:  # noqa: BLE001
-            # Capture the error but continue to get page HTML
-            error_message = str(e)
-        
-        # Always capture page HTML for investigation, even if execution failed
-        try:
-            page_html = await page.content()
-        except Exception:  # noqa: BLE001
-            # If we can't get page content, at least we tried
-            pass
-        
-        # Restore original close method
-        page.close = original_close
-        
-        await browser.close()
-    
-    # Return success=True if no error, success=False if there was an error
-    # But always include page_html if we managed to capture it
-    return PlaywrightExecutionResult(
-        success=error_message is None, 
-        page_html=page_html,
-        error_message=error_message
-    )
+    suggestions_list = suggestions[:6] if suggestions else ["• Try 'expand body' or 'show' to see structure"]
+    return '\n'.join(suggestions_list)
 
 
 def execute_html_exploration_command(

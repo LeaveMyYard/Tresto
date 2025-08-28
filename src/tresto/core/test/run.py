@@ -27,6 +27,7 @@ async def run_test(test_path: Path) -> tuple[BeautifulSoup, Image]:
             await test_func(page)
             html = await page.content()
             img = await screenshot_page(page, "png")
+            img.save("screenshot.png")
         finally:
             await browser.close()
 

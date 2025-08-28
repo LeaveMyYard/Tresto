@@ -10,9 +10,9 @@ from .state import Decision, TestAgentState
 from .tools.ask_user import ask_user as tool_ask_user
 from .tools.deside_next_action import tool_decide_next_action
 from .tools.generate import generate_or_update_code
+from .tools.html_inspect import inspect_html_tool
 from .tools.list_directory import list_directory
 from .tools.playwright_codegen import tool_record_user_input
-from .tools.playwright_iterate import playwright_iterate_cycle
 from .tools.project_inspect import project_inspect_cycle
 from .tools.read_file_content import read_file_content
 from .tools.run_test import run_test as tool_run_test
@@ -64,9 +64,12 @@ class LangGraphTestAgent:
     async def init(self) -> None:
         if self.state.current_recording_code is None:
             await tool_record_user_input(self.state)
+
+        await tool_run_test(self.state)
+        await inspect_html_tool(self.state)
         
-        if self.state.project_inspection_report is None:
-            await project_inspect_cycle(self.state)
+        # if self.state.project_inspection_report is None:
+        #     await project_inspect_cycle(self.state)
 
         # Build graph with logging wrappers
         graph = StateGraph(TestAgentState)
@@ -77,20 +80,24 @@ class LangGraphTestAgent:
         graph.add_node(Decision.RUN_TEST, tool_run_test)
         graph.add_node(Decision.READ_FILE_CONTENT, read_file_content)
         graph.add_node(Decision.LIST_DIRECTORY, list_directory)
-        graph.add_node(Decision.PLAYWRIGHT_ITERATE, playwright_iterate_cycle)
-        graph.add_node(Decision.PROJECT_INSPECT, project_inspect_cycle)
-        # graph.add_node(Decision.INSPECT_SITE, tool_inspect)
+        graph.add_node(Decision.HTML_INSPECT, inspect_html_tool)
+        # graph.add_node(Decision.PROJECT_INSPECT, project_inspect_cycle)
         graph.add_node(Decision.ASK_USER, tool_ask_user)
 
         graph.set_entry_point(Decision.DESIDE_NEXT_ACTION)
 
-        for node in set(Decision) - {Decision.FINISH, Decision.DESIDE_NEXT_ACTION}:
+        # Always run the test after modifying the code
+        graph.add_edge(Decision.MODIFY_CODE, Decision.RUN_TEST)
+
+        # After any tool (except for code modification), ask on what to do next
+        for node in set(Decision) - {Decision.FINISH, Decision.DESIDE_NEXT_ACTION, Decision.MODIFY_CODE}:
             graph.add_edge(node, Decision.DESIDE_NEXT_ACTION)
 
         # Router
         def router(state: TestAgentState) -> str:
             return state.last_decision or Decision.DESIDE_NEXT_ACTION
 
+        # Decide next action conditionally goes to the next tool, based on the model response
         graph.add_conditional_edges(
             Decision.DESIDE_NEXT_ACTION,
             router,

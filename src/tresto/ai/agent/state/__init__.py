@@ -31,8 +31,8 @@ class Decision(StrEnum):
     MODIFY_CODE = "modify_code"
     READ_FILE_CONTENT = "read_file_content"
     LIST_DIRECTORY = "list_directory"
-    PLAYWRIGHT_ITERATE = "playwright_iterate"
-    PROJECT_INSPECT = "project_inspect"
+    HTML_INSPECT = "html_inspect"
+    # PROJECT_INSPECT = "project_inspect"
     # INSPECT_SITE = "inspect_site"
     FINISH = "finish"
 

@@ -8,11 +8,7 @@ import typer
 from rich.console import Console
 
 from tresto.core.config.main import TrestoConfig
-from tresto.core.test import (
-    resolve_tests_root,
-    run_tests_path_via_executable,
-    run_tests_path_via_pytest_module,
-)
+from tresto.core.test import resolve_tests_root
 
 console = Console()
 
@@ -26,14 +22,6 @@ def _resolve_tests_root() -> Path:
             return resolve_tests_root(None)
         return resolve_tests_root(cfg)
     return resolve_tests_root(None)
-
-
-def _run_via_pytest_module(target: Path) -> int | None:
-    return run_tests_path_via_pytest_module(target)
-
-
-def _run_via_executable(target: Path) -> int | None:
-    return run_tests_path_via_executable(target)
 
 
 def run_tests_command() -> None:
@@ -53,6 +41,7 @@ def run_tests_command() -> None:
     console.print(f"📁 Test root: [bold]{shown}[/bold]")
 
     # Prefer Python API to avoid external dependency on executables
+    raise NotImplementedError("Not implemented")
     code = _run_via_pytest_module(target)
     if code is None:
         code = _run_via_executable(target)
