@@ -59,7 +59,20 @@ async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
             """\
                 Now you should generate a test.
                 Write nothing else, except the code.
-                The code should be a valid Playwright test written in Python.
+                
+                The code should be a valid Playwright test written in Python with this exact format:
+                - Import the Page type from playwright.async_api
+                - Define an async function called test_<descriptive_name> that takes one parameter: page: Page
+                - The function should contain the test logic using the page parameter
+                
+                Example format:
+                ```python
+                from playwright.async_api import Page
+                
+                async def test_login_flow(page: Page):
+                    await page.goto("https://example.com")
+                    # ... test logic here
+                ```
             """
         )
     )

@@ -39,27 +39,6 @@ async def inspect_html_tool(state: TestAgentState) -> TestAgentState:
     
     soup = state.last_run_result.soup
     llm = state.create_llm()
-    
-    # Show initial help to orient the user
-    console.print()
-    help_panel = Panel(
-        """🔍 HTML Inspection Tool
-
-Available commands:
-• show/view/start - Show collapsed HTML structure  
-• expand <css-selector> - Expand element (e.g., 'expand body')
-• text <css-selector> - Show text content of element
-• attrs <css-selector> - Show attributes of element  
-• finish - Complete exploration
-• help - Show help
-
-🎯 Strategy: Start with 'show' to see structure, then 'expand body' to explore""",
-        title="📄 HTML Inspector Ready",
-        title_align="left", 
-        border_style="blue",
-        highlight=True,
-    )
-    console.print(help_panel)
 
     # Interactive exploration loop
     while True:
@@ -113,6 +92,10 @@ Available commands:
         # Execute the HTML exploration command
         try:
             result = execute_html_exploration(command, soup)
+
+            if result is None:
+                console.print("[bold green]✅ HTML exploration completed[/bold green]", justify="center")
+                break
             
             # Display the result in a panel
             result_panel = Panel(
@@ -125,14 +108,9 @@ Available commands:
             console.print(result_panel)
             
             # Add to conversation context
-            state.local_messages.append(AIMessage(content=f"Command: {command}"))
-            state.local_messages.append(SystemMessage(content=f"HTML exploration result:\n{result}"))
-            
-            # Check if exploration is finished
-            if "EXPLORATION_FINISHED" in result:
-                console.print("[bold green]✅ HTML exploration completed[/bold green]", justify="center")
-                break
-                
+            state.messages.append(AIMessage(content=f"Command: {command}"))
+            state.messages.append(SystemMessage(content=f"HTML exploration result:\n{result}"))
+
         except Exception as e:  # noqa: BLE001
             error_panel = Panel(
                 f"Error executing command '{command}': {e}",
@@ -143,7 +121,7 @@ Available commands:
             )
             console.print(error_panel)
             
-            state.local_messages.append(
+            state.messages.append(
                 SystemMessage(content=f"Error executing HTML command '{command}': {e}")
             )
     

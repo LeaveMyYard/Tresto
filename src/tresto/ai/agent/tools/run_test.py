@@ -6,7 +6,7 @@ from langchain_core.messages import SystemMessage
 from rich.console import Console
 from rich.panel import Panel
 
-from tresto.core.test import run_test_code_in_file
+from tresto.core.test import run_test as run_test_code_in_file
 
 if TYPE_CHECKING:
     from tresto.ai.agent.state import TestAgentState
@@ -45,6 +45,16 @@ async def run_test(state: TestAgentState) -> TestAgentState:
                 highlight=True,
             )
             console.print(stderr_panel)
+
+        if state.last_run_result.traceback and state.last_run_result.traceback.strip():
+            traceback_panel = Panel(
+                state.last_run_result.traceback,
+                title="❌ Traceback",
+                title_align="left",
+                border_style="red",
+                highlight=True,
+            )
+            console.print(traceback_panel)
 
     state.messages.append(SystemMessage(content=f"Test run result: {state.last_run_result}"))
     return state

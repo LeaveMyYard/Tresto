@@ -24,14 +24,14 @@ if TYPE_CHECKING:
 
 
 class Decision(StrEnum):
+    MODIFY_CODE = "modify_code"
+    RUN_TEST = "run_test"
+    HTML_INSPECT = "html_inspect"
+    ASK_USER = "ask_user"
     RECORD_USER_INPUT = "record_user_input"
     DESIDE_NEXT_ACTION = "decide_next_action"
-    ASK_USER = "ask_user"
-    RUN_TEST = "run_test"
-    MODIFY_CODE = "modify_code"
-    READ_FILE_CONTENT = "read_file_content"
-    LIST_DIRECTORY = "list_directory"
-    HTML_INSPECT = "html_inspect"
+    # READ_FILE_CONTENT = "read_file_content"
+    # LIST_DIRECTORY = "list_directory"
     # PROJECT_INSPECT = "project_inspect"
     # INSPECT_SITE = "inspect_site"
     FINISH = "finish"

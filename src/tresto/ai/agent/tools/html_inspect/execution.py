@@ -10,8 +10,6 @@ from typing import Any
 
 from bs4 import BeautifulSoup, NavigableString
 
-from .models import InspectionResult
-
 # Content size limits to prevent overwhelming the agent
 MAX_TEXT_LENGTH = 200  # For individual text nodes
 MAX_FULL_TEXT_LENGTH = 300  # For complete text content extraction
@@ -178,7 +176,7 @@ def _find_element_by_css_selector(soup: BeautifulSoup, selector: str) -> Any | N
 _parser = _HtmlExplorationParser()
 
 
-def execute_html_exploration(command: str, soup: BeautifulSoup) -> str:
+def execute_html_exploration(command: str, soup: BeautifulSoup) -> str | None:
     """Execute HTML exploration command and return formatted response."""
 
     # Clean up command string - sometimes models start with "command: "
@@ -208,7 +206,7 @@ def execute_html_exploration(command: str, soup: BeautifulSoup) -> str:
         return _execute_attrs_command(soup, args.selector)
 
     if args.command in ["finish", "done", "complete"]:
-        return "🏁 EXPLORATION_FINISHED - Investigation complete, ready to generate report"
+        return None
 
     if args.command in ["help", "?"]:
         return _execute_help_command(args.subcommand if hasattr(args, "subcommand") else None)
@@ -428,18 +426,3 @@ def _get_navigation_suggestions(soup: BeautifulSoup, failed_selector: str) -> st
     suggestions_list = suggestions[:6] if suggestions else ["• Try 'expand body' or 'show' to see structure"]
     suggestions_text = "\n".join(suggestions_list)
     return _trim_content(suggestions_text, MAX_SUGGESTIONS_LENGTH)
-
-
-def execute_html_exploration_command(
-    command: str, soup: BeautifulSoup, globals_dict: dict[str, Any]
-) -> InspectionResult:
-    """Execute HTML exploration command and return formatted result."""
-    try:
-        # Execute the exploration command
-        result = execute_html_exploration(command, soup)
-
-        return InspectionResult(success=True, output=result)
-
-    except Exception as e:  # noqa: BLE001
-        # Catch ALL exceptions and provide them as feedback to the model
-        return InspectionResult(success=False, output="", error=str(e))
