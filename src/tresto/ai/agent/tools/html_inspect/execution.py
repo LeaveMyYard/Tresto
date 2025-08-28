@@ -41,17 +41,19 @@ class _HtmlExplorationParser:
         # Expand command
         expand_parser = subparsers.add_parser("expand", help="Expand specific element using CSS selector")
         expand_parser.add_argument(
-            "selector", help="CSS selector for the element to expand (e.g., 'body', '#myid', '.class')"
+            "selector",
+            nargs="+",
+            help="CSS selector for the element to expand (e.g., 'body', '#myid', '.class', '.parent .child')",
         )
         expand_parser.add_argument("--depth", type=int, default=3, help="Maximum depth to show (default: 3)")
 
         # Text command
         text_parser = subparsers.add_parser("text", help="Show text content of element")
-        text_parser.add_argument("selector", help="CSS selector for the element")
+        text_parser.add_argument("selector", nargs="+", help="CSS selector for the element (can contain spaces)")
 
         # Attrs command
         attrs_parser = subparsers.add_parser("attrs", help="Show attributes of element")
-        attrs_parser.add_argument("selector", help="CSS selector for the element")
+        attrs_parser.add_argument("selector", nargs="+", help="CSS selector for the element (can contain spaces)")
 
         # Finish command
         subparsers.add_parser("finish", aliases=["done", "complete"], help="Complete exploration and generate report")
@@ -190,20 +192,26 @@ def execute_html_exploration(command: str, soup: BeautifulSoup) -> str | None:
 
     if error:
         # Handle parsing errors with helpful suggestions
-        return f"❌ Command parsing error: {error}\n\n" + "💡 Use 'help' to see available commands and syntax."
+        return (
+            f"❌ Command parsing error: {error}\n\n"
+            + "💡 Use 'help' to see available commands and syntax or 'finish' to finish the exploration."
+        )
 
     # Execute based on parsed command
     if args.command in ["show", "view", "start"]:
         return _execute_show_command(soup, args.depth)
 
     if args.command == "expand":
-        return _execute_expand_command(soup, args.selector, args.depth)
+        selector = " ".join(args.selector) if isinstance(args.selector, list) else args.selector
+        return _execute_expand_command(soup, selector, args.depth)
 
     if args.command == "text":
-        return _execute_text_command(soup, args.selector)
+        selector = " ".join(args.selector) if isinstance(args.selector, list) else args.selector
+        return _execute_text_command(soup, selector)
 
     if args.command == "attrs":
-        return _execute_attrs_command(soup, args.selector)
+        selector = " ".join(args.selector) if isinstance(args.selector, list) else args.selector
+        return _execute_attrs_command(soup, selector)
 
     if args.command in ["finish", "done", "complete"]:
         return None
@@ -263,6 +271,10 @@ def _execute_text_command(soup: BeautifulSoup, selector: str) -> str:
 
     text_content = element.get_text(strip=True)
     trimmed_text = _trim_content(text_content, MAX_FULL_TEXT_LENGTH)
+
+    if trimmed_text == "":
+        return f"❌ Element '{selector}' has no text content"
+
     return f"📝 Text content of '{selector}':\n{trimmed_text}"
 
 
@@ -315,7 +327,7 @@ Usage: expand <selector> [--depth N]
 Expands specific element using CSS selector.
 
 Arguments:
-  selector     CSS selector for element (e.g., 'body', '#myid', '.class')
+  selector     CSS selector for element (can contain spaces for descendant selectors)
   
 Options:
   --depth N    Maximum depth to show (1-5, default: 3)
@@ -323,31 +335,37 @@ Options:
 Examples:
   expand body
   expand "#main-content"
-  expand .navbar --depth 2""",
+  expand .navbar --depth 2
+  expand .MuiSnackbar-root .MuiAlert-message
+  expand "div.container p.text" --depth 1""",
             "text": """📝 Text Command:
 Usage: text <selector>
 
 Shows text content of element.
 
 Arguments:
-  selector     CSS selector for element
+  selector     CSS selector for element (can contain spaces for descendant selectors)
 
 Examples:
   text body
-  text "h1"
-  text "#title" """,
+  text h1
+  text "#title"
+  text .MuiSnackbar-root .MuiAlert-message
+  text "div.container p.error" """,
             "attrs": """🏷️  Attrs Command:
 Usage: attrs <selector>
 
 Shows attributes of element.
 
 Arguments:
-  selector     CSS selector for element
+  selector     CSS selector for element (can contain spaces for descendant selectors)
 
 Examples:
   attrs body
-  attrs "input[type='text']"
-  attrs "#myform" """,
+  attrs input[type='text']
+  attrs "#myform"
+  attrs .container .form-group input
+  attrs "div.widget button.submit" """,
         }
 
         if subcommand in help_text:
@@ -374,12 +392,15 @@ Examples:
 
 📝 CSS SELECTOR EXAMPLES:
 • body - The body element
-• "#myid" - Element with id="myid" 
-• ".myclass" - Element with class="myclass"
-• "div" - First div element
-• "form input" - Input inside form
+• #myid - Element with id="myid" 
+• .myclass - Element with class="myclass"
+• div - First div element
+• form input - Input inside form
+• .MuiSnackbar-root .MuiAlert-message - Nested Material-UI elements
+• div.container p.error - Paragraph with class 'error' inside div with class 'container'
 
-💡 TIP: Use quotes around selectors with special characters!"""
+💡 MULTI-WORD SELECTORS: Descendant selectors with spaces work automatically!
+💡 QUOTES OPTIONAL: Only needed for selectors with special shell characters."""
 
 
 def _get_navigation_suggestions(soup: BeautifulSoup, failed_selector: str) -> str:
