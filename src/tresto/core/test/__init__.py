@@ -28,6 +28,15 @@ class TestRunResult:
     soup: BeautifulSoup | None = None
     screenshot: Image | None = None
 
+    def __str__(self) -> str:
+        return (
+            f"Success: {self.success}\n" +
+            f"Duration: {self.duration_s:.2f} seconds\n" +
+            (f"Stdout: \n```\n{self.stdout}\n```\n" if self.stdout else "") +
+            (f"Stderr: \n```\n{self.stderr}\n```\n" if self.stderr else "") +
+            (f"Traceback: \n```\n{self.traceback}\n```\n" if self.traceback else "")
+        )
+
 
 
 async def run_test_code_in_file(test_file_path: Path) -> TestRunResult:

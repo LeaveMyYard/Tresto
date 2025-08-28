@@ -15,6 +15,7 @@ app = typer.Typer(
     name="tresto",
     help="AI-powered E2E testing CLI inspired by Playwright codegen",
     add_completion=False,
+    pretty_exceptions_show_locals=False,
 )
 
 

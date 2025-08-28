@@ -107,7 +107,7 @@ Available commands:
                     )
                     live.update(panel)
         
-        command = command_content.strip()
+        command = " ".join(command_content.split())
         console.print(f"🔍 Executing command: [bold cyan]{command}[/bold cyan]")
         
         # Execute the HTML exploration command
