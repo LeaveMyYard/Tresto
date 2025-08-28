@@ -6,7 +6,7 @@ import pytest
 from playwright.async_api import Browser, BrowserContext, Page, async_playwright
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 async def browser() -> AsyncIterable[Browser]:
     """Create a browser instance for the test session."""
     async with async_playwright() as p:

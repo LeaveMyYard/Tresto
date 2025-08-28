@@ -27,6 +27,7 @@ class Decision(StrEnum):
     MODIFY_CODE = "modify_code"
     RUN_TEST = "run_test"
     HTML_INSPECT = "html_inspect"
+    SCREENSHOT_INSPECT = "screenshot_inspect"
     ASK_USER = "ask_user"
     RECORD_USER_INPUT = "record_user_input"
     DESIDE_NEXT_ACTION = "decide_next_action"

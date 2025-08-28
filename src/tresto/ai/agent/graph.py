@@ -11,6 +11,7 @@ from .tools.ask_user import ask_user as tool_ask_user
 from .tools.deside_next_action import tool_decide_next_action
 from .tools.generate import generate_or_update_code
 from .tools.html_inspect import inspect_html_tool
+from .tools.screenshot_inspect import screenshot_inspect_tool
 from .tools.list_directory import list_directory
 from .tools.playwright_codegen import tool_record_user_input
 from .tools.project_inspect import project_inspect_cycle
@@ -81,6 +82,7 @@ class LangGraphTestAgent:
         # graph.add_node(Decision.READ_FILE_CONTENT, read_file_content)
         # graph.add_node(Decision.LIST_DIRECTORY, list_directory)
         graph.add_node(Decision.HTML_INSPECT, inspect_html_tool)
+        graph.add_node(Decision.SCREENSHOT_INSPECT, screenshot_inspect_tool)
         # graph.add_node(Decision.PROJECT_INSPECT, project_inspect_cycle)
         graph.add_node(Decision.ASK_USER, tool_ask_user)
 

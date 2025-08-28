@@ -8,6 +8,7 @@ Available actions include:
 - modify_code: Modify the code of the test file
 - run_test: Run the test file (will automatically run after each modification)
 - html_inspect: Inspect the HTML contents of the page, that is frozen after the test is run
+- screenshot_inspect: Inspect the screenshot of the page after the test is run (send image to AI for visual analysis)
 - ask_user: Ask the user for input
 - record_user_input: Record the user input using playwright codegen to capture their manual flow for the test (will automatically run when starting iteration)
 - finish: Finish
