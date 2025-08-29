@@ -4,7 +4,7 @@ import base64
 import io
 from typing import TYPE_CHECKING
 
-from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, HumanMessage
 from rich.console import Console
 from rich.panel import Panel
 
@@ -30,7 +30,7 @@ async def screenshot_inspect_tool(state: TestAgentState) -> TestAgentState:
         console.print(error_panel)
         
         state.messages.append(
-            SystemMessage(content="Error: No screenshot available to inspect. Run a test first to capture a screenshot.")
+            HumanMessage(content="Error: No screenshot available to inspect. Run a test first to capture a screenshot.")
         )
         return state
     
@@ -92,7 +92,7 @@ async def screenshot_inspect_tool(state: TestAgentState) -> TestAgentState:
         console.print(error_panel)
         
         state.messages.append(
-            SystemMessage(content=f"Error processing screenshot: {e}")
+            HumanMessage(content=f"Error processing screenshot: {e}")
         )
     
     return state

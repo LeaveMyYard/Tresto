@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import HumanMessage
 from rich.console import Console
 from rich.panel import Panel
 
@@ -56,5 +56,5 @@ async def run_test(state: TestAgentState) -> TestAgentState:
             )
             console.print(traceback_panel)
 
-    state.messages.append(SystemMessage(content=f"Test run result: {state.last_run_result}"))
+    state.messages.append(HumanMessage(content=f"Test run result: {state.last_run_result}"))
     return state

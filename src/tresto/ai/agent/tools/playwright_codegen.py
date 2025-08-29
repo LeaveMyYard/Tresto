@@ -3,7 +3,7 @@ from __future__ import annotations
 import textwrap
 from typing import TYPE_CHECKING
 
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import HumanMessage
 from rich.console import Console
 
 from tresto.core.recorder import BrowserRecorder
@@ -26,7 +26,7 @@ async def tool_record_user_input(state: TestAgentState) -> TestAgentState:
     )
 
     state.messages.append(
-        SystemMessage(
+        HumanMessage(
             content=textwrap.dedent(
                 f"""\
                     User conducted the test manually using playwright codegen. Resulting code:

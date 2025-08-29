@@ -3,7 +3,7 @@ from __future__ import annotations
 import textwrap
 from typing import TYPE_CHECKING
 
-from langchain_core.messages import AIMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
@@ -30,7 +30,7 @@ async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
     if state.current_recording_code is not None:
         available_actions.remove(Decision.RECORD_USER_INPUT)
 
-    message = SystemMessage(
+    message = HumanMessage(
         textwrap.dedent(
             f"""\
                 You are required to decide the next action to take in a test.
@@ -94,7 +94,7 @@ async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
                 )
         except ValueError:
             messages.append(
-                SystemMessage(
+                HumanMessage(
                     f"Invalid action: {decision}. "
                     f"Available actions are: {'\n'.join(f'- {action.value}' for action in available_actions)}"
                     f"\nProvide ONLY the action name (e.g., 'read_file_content') and nothing else. No function call syntax."
@@ -135,6 +135,6 @@ async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
         else:
             break
 
-    state.messages.append(SystemMessage(content=f"Model decided to take action: {state.last_decision.value}"))
+    state.messages.append(HumanMessage(content=f"Model decided to take action: {state.last_decision.value}"))
     console.print(f"[bold green]✅ Model decided to take action: {state.last_decision.value}[/bold green]", justify="center")
     return state

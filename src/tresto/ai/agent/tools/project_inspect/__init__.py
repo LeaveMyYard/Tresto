@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import HumanMessage
 from rich.console import Console
 from rich.panel import Panel
 
@@ -207,7 +207,7 @@ async def project_inspect_cycle(state: TestAgentState) -> TestAgentState:
         iterations.append(exploration_data)
         
         # Add exploration details to local messages for context
-        state.local_messages.append(SystemMessage(
+        state.local_messages.append(HumanMessage(
             content=f"Project inspection completed:\n"
             f"- File exploration: ✅ Success\n"
             f"- Exploration findings: {final_exploration_output[:300]}{'...' if len(final_exploration_output) > 300 else ''}"
@@ -222,10 +222,10 @@ async def project_inspect_cycle(state: TestAgentState) -> TestAgentState:
     
     # Outside the context manager - local_messages are now cleared
     # Add only the final report to messages and file header
-    state.messages.append(SystemMessage(
+    state.messages.append(HumanMessage(
         content="Model inspected the project files and generated the following report."
     ))
-    state.messages.append(SystemMessage(content=project_report))
+    state.messages.append(HumanMessage(content=project_report))
     
     # Store the report in the file header
     state.project_inspection_report = project_report

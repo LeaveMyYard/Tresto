@@ -6,7 +6,7 @@ import textwrap
 from typing import TYPE_CHECKING
 from pathlib import Path
 
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import HumanMessage
 from rich.console import Console
 from rich.live import Live
 from rich.panel import Panel
@@ -24,7 +24,7 @@ async def generate_inspection_goals(state: TestAgentState) -> str:
     """Generate project inspection goals."""
     llm = state.create_llm()
     
-    goals_message = SystemMessage(
+    goals_message = HumanMessage(
         textwrap.dedent(
             f"""\
             You are about to start exploring project files to understand the codebase structure.
@@ -97,7 +97,7 @@ async def generate_file_exploration_command(
         history_str = '\n'.join([f"  {i+1}. {cmd}" for i, cmd in enumerate(exploration_history[-5:])])  # Last 5 commands
         history_info = f"\n\nRecent exploration commands:\n{history_str}"
     
-    explore_message = SystemMessage(
+    explore_message = HumanMessage(
         textwrap.dedent(
             f"""\
             You are exploring project files to understand the codebase structure.
@@ -172,7 +172,7 @@ async def generate_progress_reflection(
     
     findings_summary = '\n'.join([f"- {finding}" for finding in recent_findings[-10:]])  # Last 10 findings
     
-    reflection_message = SystemMessage(
+    reflection_message = HumanMessage(
         textwrap.dedent(
             f"""\
             You have been exploring project files for {exploration_attempts} attempts.
@@ -244,7 +244,7 @@ async def generate_inspection_report(state: TestAgentState, explorations: list[F
         for i, exp in enumerate(explorations)
     ])
     
-    report_message = SystemMessage(
+    report_message = HumanMessage(
         textwrap.dedent(
             f"""\
             Based on the project file exploration below, generate a comprehensive project inspection report.

@@ -4,7 +4,7 @@ import asyncio
 import textwrap
 from typing import TYPE_CHECKING
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
@@ -21,7 +21,7 @@ console = Console()
 async def ask_user(state: TestAgentState) -> TestAgentState:
     llm = state.create_llm()
 
-    ask_user_message = SystemMessage(
+    ask_user_message = HumanMessage(
         textwrap.dedent(
             """\
                 Model wanted to ask user a question.

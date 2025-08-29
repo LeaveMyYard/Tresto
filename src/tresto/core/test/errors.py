@@ -8,3 +8,6 @@ class TestExtractionFormatError(BaseTestExtractionError):
 
 class TestExtractionSignatureError(BaseTestExtractionError):
     pass
+
+class TestExtractionNoTestFunctionsError(BaseTestExtractionError):
+    pass

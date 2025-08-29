@@ -6,7 +6,7 @@ import hashlib
 import textwrap
 from pathlib import Path
 
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
 
 
@@ -146,7 +146,7 @@ class TestDatabase(BaseModel):
 
         return sorted(tests, key=lambda x: x["test_name"])
 
-    def to_prompt(self) -> list[SystemMessage]:
+    def to_prompt(self) -> list[HumanMessage]:
         """Convert the database to a prompt."""
 
         playwright_investigation = self.get_playwright_investigation()
@@ -155,7 +155,7 @@ class TestDatabase(BaseModel):
 
         messages = [
             (
-                SystemMessage(
+                HumanMessage(
                     content="Playwright investigation from previous runs: \n"
                     + (playwright_investigation or "")
                 )
@@ -163,7 +163,7 @@ class TestDatabase(BaseModel):
                 else None
             ),
             (
-                SystemMessage(
+                HumanMessage(
                     content="Project inspection from previous runs: \n"
                     + (project_inspection or "")
                 )
@@ -171,7 +171,7 @@ class TestDatabase(BaseModel):
                 else None
             ),
             (
-                SystemMessage(
+                HumanMessage(
                     content="Test insights from previous runs: \n"
                     + (test_insights or "")
                 )

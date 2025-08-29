@@ -4,7 +4,7 @@ import re
 import textwrap
 from typing import TYPE_CHECKING
 
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import HumanMessage
 from rich.console import Console
 from rich.live import Live
 from rich.panel import Panel
@@ -54,7 +54,7 @@ CODE_LINES_TO_SHOW = 18
 async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
     llm = state.create_llm()
 
-    generate_code_message = SystemMessage(
+    generate_code_message = HumanMessage(
         textwrap.dedent(
             """\
                 Now you should generate a test.
@@ -129,6 +129,6 @@ async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
     )
 
     state.current_test_code = final_code
-    state.messages.append(SystemMessage(content=f"Model wrote code to {state.test_file_path}"))
+    state.messages.append(HumanMessage(content=f"Model wrote code to {state.test_file_path}"))
 
     return state

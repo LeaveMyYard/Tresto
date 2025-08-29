@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import HumanMessage
 
 from tresto.ai.agent.state import TestAgentState
 from tresto.ai.agent.tools.playwright_iterate import playwright_iterate_cycle
@@ -43,7 +43,7 @@ class TestPlaywrightIterateIntegration:
             config=config,
         )
         
-        state.messages.append(SystemMessage(
+        state.messages.append(HumanMessage(
             content="Please navigate to the example.com website and examine its basic structure. "
                    "Check the page title and look for any key elements."
         ))

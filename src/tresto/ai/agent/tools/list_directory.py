@@ -4,7 +4,7 @@ import textwrap
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import HumanMessage
 from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
@@ -101,7 +101,7 @@ def _build_directory_tree(path: Path, prefix: str = "", max_depth: int = 2, curr
 async def list_directory(state: TestAgentState) -> TestAgentState:
     llm = state.create_llm()
 
-    request_path_message = SystemMessage(
+    request_path_message = HumanMessage(
         textwrap.dedent(
             """\
                 You need to see the directory structure.
@@ -204,6 +204,6 @@ async def list_directory(state: TestAgentState) -> TestAgentState:
         console.print(error_panel)
         result_message = f"Error listing directory '{dir_path}': {e}"
 
-    state.messages.append(SystemMessage(content=result_message))
+    state.messages.append(HumanMessage(content=result_message))
     
     return state 

@@ -10,7 +10,7 @@ from playwright.async_api import Browser, BrowserContext, Page, async_playwright
 async def browser() -> AsyncIterable[Browser]:
     """Create a browser instance for the test session."""
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False)
+        browser = await p.firefox.launch(headless=False)
         yield browser
         await browser.close()
 

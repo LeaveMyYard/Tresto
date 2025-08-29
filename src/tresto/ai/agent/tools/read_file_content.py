@@ -4,7 +4,7 @@ import textwrap
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import HumanMessage
 from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
@@ -50,7 +50,7 @@ def _get_file_language(file_path: Path) -> str:
 async def read_file_content(state: TestAgentState) -> TestAgentState:
     llm = state.create_llm()
 
-    request_path_message = SystemMessage(
+    request_path_message = HumanMessage(
         textwrap.dedent(
             """\
                 You need to read the content of a file.
@@ -176,6 +176,6 @@ async def read_file_content(state: TestAgentState) -> TestAgentState:
         console.print(error_panel)
         result_message = f"Error reading file '{file_path}': {e}"
 
-    state.messages.append(SystemMessage(content=result_message))
+    state.messages.append(HumanMessage(content=result_message))
     
     return state 

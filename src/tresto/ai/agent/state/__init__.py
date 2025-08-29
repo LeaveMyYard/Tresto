@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import BaseMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, ConfigDict
 
@@ -92,8 +92,8 @@ class TestAgentState(BaseModel):
             self.local_messages.clear()
 
     @property
-    def current_state_message(self) -> SystemMessage:
-        return SystemMessage(
+    def current_state_message(self) -> HumanMessage:
+        return HumanMessage(
             f"Test name: {self.test_name}\n"
             f"Test instructions: {self.test_instructions}\n\n"
             + self._current_test_code_message

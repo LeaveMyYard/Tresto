@@ -3,7 +3,7 @@ from __future__ import annotations
 import textwrap
 from typing import TYPE_CHECKING
 
-from langchain_core.messages import AIMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
@@ -33,7 +33,7 @@ async def inspect_html_tool(state: TestAgentState) -> TestAgentState:
         console.print(error_panel)
         
         state.messages.append(
-            SystemMessage(content="Error: No HTML content available to inspect. Run a test first to capture HTML.")
+            HumanMessage(content="Error: No HTML content available to inspect. Run a test first to capture HTML.")
         )
         return state
     
@@ -43,7 +43,7 @@ async def inspect_html_tool(state: TestAgentState) -> TestAgentState:
     # Interactive exploration loop
     while True:
         # Request HTML exploration command from AI
-        command_request_message = SystemMessage(
+        command_request_message = HumanMessage(
             textwrap.dedent(
                 """\
                 You are exploring HTML content from a web page using BeautifulSoup.
@@ -109,7 +109,7 @@ async def inspect_html_tool(state: TestAgentState) -> TestAgentState:
             
             # Add to conversation context
             state.messages.append(AIMessage(content=f"Command: {command}"))
-            state.messages.append(SystemMessage(content=f"HTML exploration result:\n{result}"))
+            state.messages.append(HumanMessage(content=f"HTML exploration result:\n{result}"))
 
         except Exception as e:  # noqa: BLE001
             error_panel = Panel(
@@ -122,7 +122,7 @@ async def inspect_html_tool(state: TestAgentState) -> TestAgentState:
             console.print(error_panel)
             
             state.messages.append(
-                SystemMessage(content=f"Error executing HTML command '{command}': {e}")
+                HumanMessage(content=f"Error executing HTML command '{command}': {e}")
             )
     
     # Move local messages to main conversation

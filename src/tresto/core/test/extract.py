@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, cast
 
 from playwright.async_api import Page
 
-from .errors import TestExtractionFormatError, TestExtractionSignatureError
+from .errors import TestExtractionFormatError, TestExtractionNoTestFunctionsError, TestExtractionSignatureError
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 type TestFunction = Callable[[Page], Awaitable[None]]
 
 
-def extract_test_function(path: Path) -> TestFunction | None:
+def extract_test_function(path: Path) -> TestFunction:
     if not path.exists() or not path.is_file():
         raise TestExtractionFormatError(f"Test file not found: {path}")
     if path.suffix != ".py":
@@ -34,7 +34,7 @@ def extract_test_function(path: Path) -> TestFunction | None:
     candidates = [obj for name, obj in namespace.items() if name.startswith("test_") and callable(obj)]
 
     if not candidates:
-        return None
+        raise TestExtractionNoTestFunctionsError("No test functions found")
     if len(candidates) > 1:
         raise TestExtractionFormatError(f"Expected exactly one test function, found {len(candidates)}")
 
