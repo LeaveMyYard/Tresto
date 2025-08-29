@@ -1,17 +1,19 @@
 from __future__ import annotations
 
+import yaml
 from contextlib import contextmanager
 from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from langchain_anthropic import ChatAnthropic
+from langchain.chat_models import init_chat_model
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
+from langchain_core.tools import Tool
 from pydantic import BaseModel, ConfigDict
 
 from tresto import __version__
 from tresto.ai import prompts
+from tresto.ai.agent.agent import Agent
 from tresto.core.config.main import TrestoConfig
 from tresto.core.database import TestDatabase
 from tresto.core.file_header import FileHeader, TrestoFileHeaderCorrupted
@@ -54,8 +56,8 @@ class TestAgentState(BaseModel):
     config: TrestoConfig
 
     # Conversational context
-    messages: list[BaseMessage] = [SystemMessage(content=prompts.MAIN_PROMPT)]
-    local_messages: list[BaseMessage] = []  # Temporary messages for tools
+    messages: list[BaseMessage | dict] = []
+    local_messages: list[BaseMessage | dict] = []  # Temporary messages for tools
 
     # Working artifacts
     last_run_result: TestRunResult | None = None
@@ -63,6 +65,26 @@ class TestAgentState(BaseModel):
     iterations: int = 0
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def create_agent(self, system_message: str, tools: list[Tool] | None = None) -> Agent:
+        return Agent(
+            state=self,
+            llm=self.create_llm(tools=tools),
+            system_message=SystemMessage(content=system_message),
+            tools={tool.name: tool for tool in tools or []},
+        )
+    
+    def add_message(self, message: BaseMessage | dict) -> None:
+        with open("debug.txt", "a") as f:
+            f.write(f"{message}\n")
+
+        if not isinstance(message, dict) and not message.content:
+            return
+
+        self.messages.append(message)
+
+        with open("state.yaml", "w") as f:
+            yaml.dump(self.model_dump(mode="json", exclude=["last_run_result"]), f, indent=2)
 
     @property
     def test_database(self) -> TestDatabase:
@@ -72,11 +94,8 @@ class TestAgentState(BaseModel):
             test_name=self.test_name
         )
 
-    def create_llm(self: TestAgentState) -> BaseChatModel:
-        if self.config.ai.connector.lower() in {"openai", "gpt"}:
-            return ChatOpenAI(model=self.config.ai.model, temperature=self.config.ai.temperature)
-
-        return ChatAnthropic(model_name=self.config.ai.model, temperature=self.config.ai.temperature)
+    def create_llm(self: TestAgentState, tools: list[Tool] | None = None) -> BaseChatModel:
+        return init_chat_model(f"{self.config.ai.connector}:{self.config.ai.model}").bind_tools(tools or [])
 
     @property
     def all_messages(self) -> list[BaseMessage]:

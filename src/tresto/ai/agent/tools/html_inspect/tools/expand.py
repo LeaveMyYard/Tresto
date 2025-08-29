@@ -1,0 +1,50 @@
+from bs4 import BeautifulSoup
+from langchain.tools import Tool, tool
+from pydantic import BaseModel, Field, field_validator
+
+from tresto.ai.agent.tools.html_inspect.tools.core import (
+    MAX_VIEW_LENGTH,
+    find_element_by_css_selector,
+    format_element_collapsed,
+    trim_content,
+)
+
+
+class ExpandArgs(BaseModel):
+    selector: str = Field(description="CSS selector for the element to expand (can contain spaces for descendant selectors)")
+    depth: int = Field(3, description="Maximum depth to show (default: 3)")
+
+    @field_validator("depth")
+    def validate_depth(cls, v: int) -> int:
+        if v < 1 or v > 5:
+            raise ValueError("Depth must be between 1 and 5")
+        return v
+
+
+def create_bound_expand_tool(soup: BeautifulSoup) -> Tool:
+    @tool(description="Expand specific element using CSS selector", args_schema=ExpandArgs)
+    def expand(selector: str, depth: int = 3) -> str:
+        """Expand specific element using CSS selector with specified depth."""
+        # Validate depth
+        if depth < 1 or depth > 5:
+            return "❌ Depth must be between 1 and 5"
+
+        element = find_element_by_css_selector(soup, selector)
+
+        if element is None:
+            from tresto.ai.agent.tools.html_inspect.tools.core import get_navigation_suggestions
+            suggestions = get_navigation_suggestions(soup, selector)
+            return (
+                f"❌ Could not find element with selector: {selector}\n\n"
+                + f"💡 Try these selectors instead:\n{suggestions}"
+            )
+
+        view = format_element_collapsed(element, 0, max_depth=depth)
+        trimmed_view = trim_content(view, MAX_VIEW_LENGTH)
+        return (
+            f"📂 Expanded view of '{selector}' ({depth} levels):\n\n{trimmed_view}\n"
+            + "💡 Use more specific selectors or try exploring children shown above"
+        )
+
+    return expand
+

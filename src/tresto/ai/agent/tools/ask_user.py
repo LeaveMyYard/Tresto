@@ -38,7 +38,7 @@ async def ask_user(state: TestAgentState) -> TestAgentState:
     with Live(console=console, refresh_per_second=10) as live:
         async for chunk in llm.astream(state.messages + [ask_user_message]):
             if chunk.content:
-                question_content += chunk.content
+                question_content += str(chunk.content)
                 
                 # Create markdown content for the question
                 markdown_content = Markdown(question_content, style="bold")

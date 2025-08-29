@@ -58,7 +58,7 @@ async def generate_inspection_goals(state: TestAgentState) -> str:
         goals_content = ""
         async for chunk in llm.astream(state.all_messages + [goals_message]):
             if chunk.content:
-                goals_content += chunk.content
+                goals_content += str(chunk.content)
         console.print("✅ Project inspection goals defined")
         return goals_content.strip()
     
@@ -67,7 +67,7 @@ async def generate_inspection_goals(state: TestAgentState) -> str:
     with Live(console=console, refresh_per_second=10) as live:
         async for chunk in llm.astream(state.all_messages + [goals_message]):
             if chunk.content:
-                goals_content += chunk.content
+                goals_content += str(chunk.content)
                 
                 panel = Panel(
                     goals_content,
@@ -139,7 +139,7 @@ async def generate_file_exploration_command(
         ai_content = ""
         async for chunk in llm.astream(state.all_messages + [explore_message]):
             if chunk.content:
-                ai_content += chunk.content
+                ai_content += str(chunk.content)
         console.print("✅ File exploration command generated")
         return ai_content.strip()
     
@@ -148,7 +148,7 @@ async def generate_file_exploration_command(
     with Live(console=console, refresh_per_second=10) as live:
         async for chunk in llm.astream(state.all_messages + [explore_message]):
             if chunk.content:
-                ai_content += chunk.content
+                ai_content += str(chunk.content)
                 
                 panel = Panel(
                     ai_content,
@@ -209,7 +209,7 @@ async def generate_progress_reflection(
         reflection_content = ""
         async for chunk in llm.astream(state.all_messages + [reflection_message]):
             if chunk.content:
-                reflection_content += chunk.content
+                reflection_content += str(chunk.content)
         console.print("✅ Progress reflection completed")
         return reflection_content.strip()
     
@@ -218,7 +218,7 @@ async def generate_progress_reflection(
     with Live(console=console, refresh_per_second=10) as live:
         async for chunk in llm.astream(state.all_messages + [reflection_message]):
             if chunk.content:
-                reflection_content += chunk.content
+                reflection_content += str(chunk.content)
                 
                 panel = Panel(
                     reflection_content,
@@ -288,7 +288,7 @@ async def generate_inspection_report(state: TestAgentState, explorations: list[F
         report_content = ""
         async for chunk in llm.astream(state.all_messages + [report_message]):
             if chunk.content:
-                report_content += chunk.content
+                report_content += str(chunk.content)
         console.print("✅ Project inspection report generated")
         return report_content
     
@@ -297,7 +297,7 @@ async def generate_inspection_report(state: TestAgentState, explorations: list[F
     with Live(console=console, refresh_per_second=10) as live:
         async for chunk in llm.astream(state.all_messages + [report_message]):
             if chunk.content:
-                report_content += chunk.content
+                report_content += str(chunk.content)
                 
                 panel = Panel(
                     report_content,

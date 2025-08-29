@@ -19,57 +19,28 @@ console = Console()
 
 
 async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
-    llm = state.create_llm()
-
-    # We create a copy of the messages to avoid modifying the original list
-    # So that we don't pass useless messages to the model
-    messages = state.messages.copy()
     available_actions = set(Decision) - {Decision.DESIDE_NEXT_ACTION}
 
     # If the user already recorded the test, let's not ask him to do it again
     if state.current_recording_code is not None:
         available_actions.remove(Decision.RECORD_USER_INPUT)
 
-    message = HumanMessage(
-        textwrap.dedent(
-            f"""\
-                You are required to decide the next action to take in a test.
-                Available actions are: {" ".join(f"- {action.value}" for action in available_actions)}
-                With the next message, verbosely think about what to choose.
-                The last line should contain ONLY the action name (e.g., "read_file_content") and nothing else.
-                Do NOT use function call syntax like "read_file_content('/path/to/file')".
-            """
-        )
+    agent = state.create_agent(system_message=textwrap.dedent(
+        f"""\
+            You are required to decide the next action to take in a test.
+            Available actions are: {" ".join(f"- {action.value}" for action in available_actions)}
+            With the next message, verbosely think about what to choose.
+            The last line should contain ONLY the action name (e.g., "read_file_content") and nothing else.
+            Do NOT use function call syntax like "read_file_content('/path/to/file')".
+        """
+    ))
+
+    reasoning_content = await agent.process(
+        message=HumanMessage(content="Decide the next action to take in a test."),
+        panel_title="🤖 AI deciding next action...",
+        border_style="yellow",
     )
 
-    messages.append(message)
-
-    # Stream the response and display markdown in real-time
-    reasoning_content = ""
-
-    console.print()  # Add spacing before streaming
-    
-    with Live(console=console, refresh_per_second=10) as live:
-        async for chunk in llm.astream(messages):
-            if chunk.content:
-                reasoning_content += chunk.content
-                
-                # Create markdown content with character count
-                markdown_content = Markdown(reasoning_content, style="dim")
-                char_count = len(reasoning_content)
-                
-                # Display in a panel with title showing character count
-                panel = Panel(
-                    markdown_content,
-                    title=f"🤔 AI Reasoning ({char_count} characters)",
-                    title_align="left",
-                    border_style="dim"
-                )
-                live.update(panel)
-    
-    console.print()  # Add spacing after streaming completes
-    
-    messages.append(AIMessage(content=reasoning_content))
     decision = reasoning_content.split("\n")[-1].strip()
     
     # Handle function-style commands by extracting the action name
@@ -107,7 +78,7 @@ async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
             with Live(console=console, refresh_per_second=10) as live:
                 async for chunk in llm.astream(messages):
                     if chunk.content:
-                        retry_content += chunk.content
+                        retry_content += str(chunk.content)
                         
                         # Create markdown content with character count
                         markdown_content = Markdown(retry_content)

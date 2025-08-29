@@ -69,7 +69,7 @@ async def read_file_content(state: TestAgentState) -> TestAgentState:
     with Live(console=console, refresh_per_second=10) as live:
         async for chunk in llm.astream(state.messages + [request_path_message]):
             if chunk.content:
-                path_content += chunk.content
+                path_content += str(chunk.content)
                 
                 # Create markdown content for the path selection
                 markdown_content = Markdown(path_content)
