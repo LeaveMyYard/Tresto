@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import json
 import re
-from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -16,6 +14,8 @@ from rich.panel import Panel
 from rich.syntax import Syntax
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from tresto.ai.agent.state import TestAgentState
 
 console = Console()
@@ -160,27 +160,30 @@ class Agent:
             )
 
         if result:
-            if isinstance(result.content, str):
-                self.state.add_message(AIMessage(content=result.content))
-                for item in result.content:
-                    if isinstance(item, str):
-                        self.state.add_message(AIMessage(content=item))
-                    elif item.get("type") == "text":
-                        self.state.add_message(AIMessage(content=item.get("text", "")))
+            # Add the AI message to the conversation history first
+            ai_message = AIMessage(
+                content=result.content,
+                tool_calls=result.tool_calls if hasattr(result, 'tool_calls') else None
+            )
+            self.state.add_message(ai_message)
 
-        # Call tools if needed
-        if result.tool_calls:
-            for tool_call in result.tool_calls:
-                console.print(f"Tool call: {tool_call}")
-                tool_name = tool_call.get("name", "")
-                tool = self.tools.get(tool_name)
-                if tool:
-                    tool_result = tool.invoke(tool_call)
-                    console.print(Panel(tool_result.content))
-                    self.state.add_message(ToolMessage(content=tool_call))
-                    self.state.add_message(tool_result)
-                else:
-                    console.print(f"Tool call: {tool_name} not found")
-                    self.state.add_message(AIMessage(content=f"Tool call: {tool_name} not found"))
+            # Call tools if needed
+            if result.tool_calls:
+                for tool_call in result.tool_calls:
+                    console.print(f"Tool call: {tool_call}")
+                    tool_name = tool_call.get("name", "")
+                    tool = self.tools.get(tool_name)
+                    if tool:
+                        tool_result = tool.invoke(tool_call)
+                        console.print(Panel(tool_result.content))
+                        # Create proper ToolMessage with tool_call_id and result content
+                        tool_message = ToolMessage(
+                            content=tool_result.content,
+                            tool_call_id=tool_call.get("id", "")
+                        )
+                        self.state.add_message(tool_message)
+                    else:
+                        console.print(f"Tool call: {tool_name} not found")
+                        self.state.add_message(AIMessage(content=f"Tool call: {tool_name} not found"))
 
         return response
