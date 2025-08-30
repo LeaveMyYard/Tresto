@@ -44,7 +44,7 @@ async def inspect_html_tool(state: TestAgentState) -> TestAgentState:
     )
 
     while True:
-        result = await agent.process(
+        result = await agent.invoke(
             message=HumanMessage(content="Use tools or respond with 'done' to finish."),
             panel_title="🤖 AI exploring HTML content...",
             border_style="yellow",

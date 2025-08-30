@@ -39,10 +39,7 @@ async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
         """
     )
 
-    result = await agent.structured_process(
-        message=HumanMessage(content="Decide the next action to take in a test."),
-        response_format=DecisionResponse,
-    )
+    result = await agent.structured_process(DecisionResponse)
 
     state.last_decision = result.decision
     state.messages.append(HumanMessage(content=f"Model decided to take action: {state.last_decision.value}"))

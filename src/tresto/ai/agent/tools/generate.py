@@ -57,7 +57,7 @@ async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
     )
 
     # Use agent.process in code generation mode
-    state.current_test_code = await agent.process(
+    state.current_test_code = await agent.invoke(
         message=HumanMessage(content="Now you should generate a test."),
         panel_title=(
             "🤖 Generating Test Code ({char_count} chars, "

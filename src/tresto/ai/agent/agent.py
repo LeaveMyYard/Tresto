@@ -78,17 +78,17 @@ class Agent:
     def total_messages(self) -> list[BaseMessage]:
         return [self.system_message] + self.state.messages
 
-    async def structured_process[T: BaseModel](
+    async def structured_response[T: BaseModel](
         self,
-        message: BaseMessage | None,
         response_format: type[T],
+        message: BaseMessage | None = None,
     ) -> T:
         llm = self.llm.with_structured_output(response_format)
         result = await llm.ainvoke(self.total_messages + ([message] if message else []))
         console.print(result.model_dump_json(indent=2))
         return result
 
-    async def process(
+    async def invoke(
         self,
         message: BaseMessage | None,
         panel_title: str = "🤖 AI processing... ({char_count} characters)",
