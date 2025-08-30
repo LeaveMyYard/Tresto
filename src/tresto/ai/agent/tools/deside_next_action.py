@@ -8,6 +8,7 @@ from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
 from rich.panel import Panel
+from pydantic import BaseModel
 
 from tresto.ai.agent.state import Decision
 
@@ -18,6 +19,11 @@ if TYPE_CHECKING:
 console = Console()
 
 
+class DecisionResponse(BaseModel):
+    decision: Decision
+    reason: str
+
+
 async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
     available_actions = set(Decision) - {Decision.DESIDE_NEXT_ACTION}
 
@@ -25,87 +31,22 @@ async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
     if state.current_recording_code is not None:
         available_actions.remove(Decision.RECORD_USER_INPUT)
 
-    agent = state.create_agent(system_message=textwrap.dedent(
+    agent = state.create_agent(
         f"""\
             You are required to decide the next action to take in a test.
             Available actions are: {" ".join(f"- {action.value}" for action in available_actions)}
-            With the next message, verbosely think about what to choose.
-            The last line should contain ONLY the action name (e.g., "read_file_content") and nothing else.
-            Do NOT use function call syntax like "read_file_content('/path/to/file')".
+            Respond with the decision and the reason.
         """
-    ))
-
-    reasoning_content = await agent.process(
-        message=HumanMessage(content="Decide the next action to take in a test."),
-        panel_title="🤖 AI deciding next action...",
-        border_style="yellow",
     )
 
-    decision = reasoning_content.split("\n")[-1].strip()
-    
-    # Handle function-style commands by extracting the action name
-    original_decision = decision
-    if "(" in decision and decision.endswith(")"):
-        # Extract function name from function call syntax
-        function_name = decision.split("(")[0].strip()
-        # Check if this function name matches any available action
-        for action in available_actions:
-            if function_name == action.value:
-                decision = action.value
-                break
+    result = await agent.structured_process(
+        message=HumanMessage(content="Decide the next action to take in a test."),
+        response_format=DecisionResponse,
+    )
 
-    while True:
-        try:
-            if decision in available_actions:
-                state.last_decision = Decision(decision)
-            else:
-                raise ValueError(
-                    f"Invalid action: {decision}. "
-                    f"Available actions are: {'\n'.join(f'- {action.value}' for action in available_actions)}"
-                )
-        except ValueError:
-            messages.append(
-                HumanMessage(
-                    f"Invalid action: {decision}. "
-                    f"Available actions are: {'\n'.join(f'- {action.value}' for action in available_actions)}"
-                    f"\nProvide ONLY the action name (e.g., 'read_file_content') and nothing else. No function call syntax."
-                )
-            )
-            
-            # Stream the retry response with markdown too
-            retry_content = ""
-            
-            with Live(console=console, refresh_per_second=10) as live:
-                async for chunk in llm.astream(messages):
-                    if chunk.content:
-                        retry_content += str(chunk.content)
-                        
-                        # Create markdown content with character count
-                        markdown_content = Markdown(retry_content)
-                        char_count = len(retry_content)
-                        
-                        # Display in a panel with title showing character count
-                        panel = Panel(
-                            markdown_content,
-                            title=f"🔄 AI Retry ({char_count} characters)",
-                            title_align="left",
-                            border_style="yellow"
-                        )
-                        live.update(panel)
-            
-            console.print()  # Add spacing after retry streaming completes
-            decision = retry_content.split("\n")[-1].strip()
-            
-            # Handle function-style commands in retry as well
-            if "(" in decision and decision.endswith(")"):
-                function_name = decision.split("(")[0].strip()
-                for action in available_actions:
-                    if function_name == action.value:
-                        decision = action.value
-                        break
-        else:
-            break
-
+    state.last_decision = result.decision
     state.messages.append(HumanMessage(content=f"Model decided to take action: {state.last_decision.value}"))
-    console.print(f"[bold green]✅ Model decided to take action: {state.last_decision.value}[/bold green]", justify="center")
+    console.print(
+        f"[bold green]✅ Model decided to take action: {state.last_decision.value}[/bold green]", justify="center"
+    )
     return state

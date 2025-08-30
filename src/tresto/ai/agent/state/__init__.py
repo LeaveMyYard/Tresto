@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING
+import textwrap
 
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -70,7 +71,7 @@ class TestAgentState(BaseModel):
         return Agent(
             state=self,
             llm=self.create_llm(tools=tools),
-            system_message=SystemMessage(content=system_message),
+            system_message=SystemMessage(content=textwrap.dedent(system_message)),
             tools={tool.name: tool for tool in tools or []},
         )
     

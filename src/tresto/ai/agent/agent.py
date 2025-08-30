@@ -4,6 +4,8 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from pydantic import BaseModel
+
 from langchain.chat_models.base import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, BaseMessageChunk, SystemMessage, ToolMessage
 from langchain_core.tools import BaseTool
@@ -72,6 +74,20 @@ class Agent:
     system_message: SystemMessage
     tools: dict[str, BaseTool]
 
+    @property
+    def total_messages(self) -> list[BaseMessage]:
+        return [self.system_message] + self.state.messages
+
+    async def structured_process[T: BaseModel](
+        self,
+        message: BaseMessage | None,
+        response_format: type[T],
+    ) -> T:
+        llm = self.llm.with_structured_output(response_format)
+        result = await llm.ainvoke(self.total_messages + ([message] if message else []))
+        console.print(result.model_dump_json(indent=2))
+        return result
+
     async def process(
         self,
         message: BaseMessage | None,
@@ -86,11 +102,7 @@ class Agent:
         console.print()  # Add spacing before streaming
 
         with Live(console=console, refresh_per_second=10) as live:
-            total_messages = [self.system_message] + self.state.messages
-            if message:
-                total_messages.append(message)
-
-            async for chunk in self.llm.astream(total_messages):
+            async for chunk in self.llm.astream(self.total_messages + ([message] if message else [])):
                 if result is None:
                     result = chunk
                 else:
