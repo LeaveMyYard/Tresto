@@ -117,14 +117,18 @@ second_code_block = True
 
     def test_malformed_code_blocks(self):
         """Test handling of malformed code blocks."""
-        # Missing closing fence
+        # Missing closing fence - this is now treated as incomplete code block
         text = """```python
 from playwright.async_api import Page
 async def test_example(page: Page):
     pass"""
 
         result = _strip_markdown_code_fences(text)
-        assert result == text.strip()  # Should return original
+        # Should extract the code without the opening ```python line
+        expected = """from playwright.async_api import Page
+async def test_example(page: Page):
+    pass"""
+        assert result == expected
 
     def test_nested_backticks_in_code(self):
         """Test code blocks containing backticks."""
@@ -215,6 +219,41 @@ async def test_login_form(page: Page):
         assert "python" not in result or "from playwright.async_api import Page" in result
         assert result.startswith("from playwright.async_api import Page")
         assert "async def test_login_form(page: Page):" in result
+
+    def test_incomplete_code_block_missing_closing(self):
+        """Test handling of incomplete code blocks (missing closing ```)."""
+        # This simulates the truncation issue you described
+        text = """```python
+from playwright.async_api import Page
+
+async def test_example(page: Page):
+    await page.goto("https://example.com")
+    await page.get_by_role("button", name="Open").click()
+    await page.get_by_role("combobox", name="Add Country").fill("austra")
+    await page.get_by_role("option", name="Australia").click()
+    await page.get_by_role"""
+        
+        result = _strip_markdown_code_fences(text)
+        
+        # Should extract the code even without closing ```
+        assert "```python" not in result
+        assert "from playwright.async_api import Page" in result
+        assert result.endswith('await page.get_by_role')
+        
+    def test_incomplete_code_block_just_opening(self):
+        """Test handling of just opening code fence."""
+        text = """```python
+from playwright.async_api import Page
+
+async def test_example(page: Page):
+    await page.goto("https://example.com")"""
+        
+        result = _strip_markdown_code_fences(text)
+        
+        # Should extract the code even without closing ```
+        assert "```python" not in result
+        assert "from playwright.async_api import Page" in result
+        assert 'await page.goto("https://example.com")' in result
 
 
 class TestValidateTestCode:

@@ -171,17 +171,26 @@ class Agent:
     async def _process_tool_calls(self, tool_calls: list[dict]) -> None:
         """Process and execute tool calls."""
         for tool_call in tool_calls:
-            console.print(f"Tool call: {tool_call}")
             tool_name = tool_call.get("name", "")
             tool = self.tools.get(tool_name)
 
             if tool:
                 tool_result = tool.invoke(tool_call)
-                console.print(Panel(tool_result.content))
+                console.print(
+                    Panel(
+                        tool_result.content,
+                        title=f"🔧 {tool_name}",
+                        title_align="left",
+                        border_style="green",
+                        highlight=True,
+                    )
+                )
 
                 tool_message = ToolMessage(content=tool_result.content, tool_call_id=tool_call.get("id", ""))
                 self.state.add_message(tool_message)
             else:
-                error_msg = f"Tool call: {tool_name} not found"
-                console.print(error_msg)
+                error_msg = f"❌ Model tried to call tool {tool_name} but it was not found"
+                console.print(
+                    Panel(error_msg, title="❌ Tool Not Found", title_align="left", border_style="red", highlight=True)
+                )
                 self.state.add_message(AIMessage(content=error_msg))

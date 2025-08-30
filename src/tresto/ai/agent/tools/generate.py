@@ -28,13 +28,27 @@ def _strip_markdown_code_fences(text: str) -> str:
 
     # Fallback: handle code blocks that wrap the entire text
     stripped_text = text.strip()
-    if stripped_text.startswith("```") and stripped_text.endswith("```"):
-        # Remove the first and last ``` lines
-        lines = stripped_text.split("\n")
-        if len(lines) >= 2:
-            # Remove first line (```python or similar) and last line (```)
-            code_lines = lines[1:-1]
-            return "\n".join(code_lines).strip()
+    if stripped_text.startswith("```"):
+        # Find the first newline after opening ```
+        first_newline = stripped_text.find('\n')
+        if first_newline != -1:
+            # Check if it ends with ```
+            if stripped_text.endswith("```"):
+                # Complete code block - remove first and last lines
+                lines = stripped_text.split("\n")
+                if len(lines) >= 2:
+                    code_lines = lines[1:-1]
+                    return "\n".join(code_lines).strip()
+            else:
+                # Incomplete code block - check if this is a real incomplete block
+                # (has substantial content after the opening ```)
+                potential_code = stripped_text[first_newline + 1:].strip()
+                if potential_code and len(potential_code.split('\n')) > 1:
+                    console.print("[yellow]⚠️  Found incomplete code block (missing closing ```) - extracting anyway[/yellow]")
+                    return potential_code
+                else:
+                    # This is likely just malformed (empty or single line), return original
+                    return text.strip()
 
     # If no code blocks found, return original text
     return text.strip()
@@ -102,9 +116,9 @@ async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
 
         response = await agent.invoke(
             message=HumanMessage(content=prompt),
-            panel_title=f"🤖 Generating Test Code (attempt {retry_count + 1}/{MAX_RETRIES}) - {{char_count}} chars, {{total_lines}} lines [dim](showing last {{showing_lines}} lines)[/dim]",
+            panel_title=f"🤖 Generating Test Code (attempt {retry_count + 1}/{MAX_RETRIES}) - {{char_count}} chars",
             border_style="blue" if retry_count == 0 else "yellow",
-            max_lines=20,
+            max_lines=25,  # Show more lines to reduce chance of cutting off important content
         )
 
         # Try to extract code from the response

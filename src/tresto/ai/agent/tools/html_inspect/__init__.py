@@ -49,7 +49,7 @@ async def inspect_html_tool(state: TestAgentState) -> TestAgentState:
             panel_title="🤖 AI exploring HTML content...",
             border_style="yellow",
         )
-        if result == "done":
+        if result.endswith("done"):
             break
 
     return state
