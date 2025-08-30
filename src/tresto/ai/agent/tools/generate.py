@@ -1,31 +1,62 @@
 from __future__ import annotations
 
-import re
 import textwrap
+import re
 from typing import TYPE_CHECKING
 
 from langchain_core.messages import HumanMessage
+from rich.console import Console
 
 if TYPE_CHECKING:
     from tresto.ai.agent.state import TestAgentState
 
 
+console = Console()
+
+
 def _strip_markdown_code_fences(text: str) -> str:
     """Extract code from markdown fenced code blocks."""
-    # Try to extract the first fenced code block; prefer ```python
-    pattern = re.compile(r"```\s*(?:python|py)?\s*\n([\s\S]*?)\n```", re.IGNORECASE)
-    m = pattern.search(text)
-    if m:
-        return m.group(1).strip()
-    # Fallback: remove any wrapping triple backticks without language
-    pattern2 = re.compile(r"^```\s*\n?([\s\S]*?)\n?```\s*$", re.IGNORECASE)
-    m2 = pattern2.match(text.strip())
-    if m2:
-        return m2.group(1).strip()
+    if not text.strip():
+        return ""
+    
+    # Try to extract the first fenced code block with optional language specifier
+    # This pattern handles: ```python, ```py, or just ```
+    pattern = re.compile(r"```\s*(?:python|py)?\s*\r?\n([\s\S]*?)\r?\n```", re.IGNORECASE | re.MULTILINE)
+    match = pattern.search(text)
+    if match:
+        return match.group(1).strip()
+    
+    # Fallback: handle code blocks that wrap the entire text
+    stripped_text = text.strip()
+    if stripped_text.startswith("```") and stripped_text.endswith("```"):
+        # Remove the first and last ``` lines
+        lines = stripped_text.split('\n')
+        if len(lines) >= 2:
+            # Remove first line (```python or similar) and last line (```)
+            code_lines = lines[1:-1]
+            return '\n'.join(code_lines).strip()
+    
+    # If no code blocks found, return original text
     return text.strip()
 
 
-CODE_LINES_TO_SHOW = 18
+MAX_RETRIES = 3
+
+
+def _validate_test_code(code: str) -> tuple[bool, str]:
+    """Validate that the extracted code is a proper Playwright test."""
+    if not code.strip():
+        return False, "No code content found"
+    
+    # Check for required imports
+    if "from playwright.async_api import Page" not in code:
+        return False, "Missing required import: from playwright.async_api import Page"
+    
+    # Check for test function definition
+    if not re.search(r"async def test_\w+\(page:\s*Page\):", code):
+        return False, "Missing required test function definition: async def test_<name>(page: Page):"
+    
+    return True, ""
 
 
 async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
@@ -33,11 +64,10 @@ async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
     
     # Create agent for code generation
     agent = state.create_agent(
-        system_message=textwrap.dedent(
-            """\
+        """\
             You are a test code generator. Generate valid Playwright test code in Python.
             
-            Write nothing else, except the code.
+            CRITICAL: You MUST wrap your code in ```python code blocks. Do not include any explanatory text outside the code block.
             
             The code should be a valid Playwright test written in Python with this exact format:
             - Import the Page type from playwright.async_api
@@ -52,21 +82,55 @@ async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
                 await page.goto("https://example.com")
                 # ... test logic here
             ```
-            """
+        """
+    )
+
+    retry_count = 0
+    last_error = ""
+    
+    while retry_count < MAX_RETRIES:
+        # Generate the code
+        if retry_count == 0:
+            prompt = "Now you should generate a test."
+        else:
+            prompt = textwrap.dedent(
+                f"""\
+                    The previous attempt failed with error: {last_error}
+                    Please try again and make sure to:
+                    1. Wrap your code in ```python code blocks
+                    2. Include the required import: from playwright.async_api import Page
+                    3. Define a test function: async def test_<name>(page: Page):
+                    4. Do not include any text outside the code block
+                """
+            )
+
+        response = await agent.invoke(
+            message=HumanMessage(content=prompt),
+            panel_title=f"🤖 Generating Test Code (attempt {retry_count + 1}/{MAX_RETRIES}) - {{char_count}} chars",
+            border_style="blue" if retry_count == 0 else "yellow",
         )
-    )
-
-    # Use agent.process in code generation mode
-    state.current_test_code = await agent.invoke(
-        message=HumanMessage(content="Now you should generate a test."),
-        panel_title=(
-            "🤖 Generating Test Code ({char_count} chars, "
-            "{total_lines} lines) [dim]last {code_lines_to_show} lines:[/dim]"
-        ),
-        border_style="blue",
-        code_generation_mode=True,
-        code_lines_to_show=CODE_LINES_TO_SHOW,
-        post_process_callback=_strip_markdown_code_fences,
-    )
-
+        
+        # Try to extract code from the response
+        extracted_code = _strip_markdown_code_fences(response)
+        
+        # Validate the extracted code
+        is_valid, error_message = _validate_test_code(extracted_code)
+        
+        if is_valid:
+            state.current_test_code = extracted_code
+            if retry_count > 0:
+                console.print(f"✅ Successfully generated test code on attempt {retry_count + 1}")
+            return state
+        
+        # If validation failed, prepare for retry
+        last_error = error_message
+        retry_count += 1
+        
+        if retry_count < MAX_RETRIES:
+            console.print(f"❌ Code generation failed (attempt {retry_count}/{MAX_RETRIES}): {error_message}")
+            console.print("🔄 Retrying...")
+    
+    # If we've exhausted all retries, use the last response as fallback
+    console.print(f"⚠️  Failed to generate valid test code after {MAX_RETRIES} attempts. Using raw response.")
+    state.current_test_code = response
     return state

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -13,59 +12,12 @@ from rich.console import Console, RenderableType
 from rich.live import Live
 from rich.markdown import Markdown
 from rich.panel import Panel
-from rich.syntax import Syntax
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from tresto.ai.agent.state import TestAgentState
 
 console = Console()
 
-
-def _strip_markdown_code_fences(text: str) -> str:
-    """Extract code from markdown fenced code blocks."""
-    # Try to extract the first fenced code block; prefer ```python
-    pattern = re.compile(r"```\s*(?:python|py)?\s*\n([\s\S]*?)\n```", re.IGNORECASE)
-    m = pattern.search(text)
-    if m:
-        return m.group(1).strip()
-    # Fallback: remove any wrapping triple backticks without language
-    pattern2 = re.compile(r"^```\s*\n?([\s\S]*?)\n?```\s*$", re.IGNORECASE)
-    m2 = pattern2.match(text.strip())
-    if m2:
-        return m2.group(1).strip()
-    return text.strip()
-
-
-def _get_last_n_lines(text: str, n: int = 10) -> str:
-    """Get the last n lines from text, handling both complete and partial lines."""
-    if not text.strip():
-        return ""
-
-    lines = text.split("\n")
-    # Take the last n lines, but ensure we don't start with empty lines
-    last_lines = lines[-n:] if len(lines) >= n else lines
-
-    # If the last line is empty and we have more than one line, remove it
-    # This handles cases where the text ends with a newline
-    if len(last_lines) > 1 and not last_lines[-1].strip():
-        last_lines = last_lines[:-1]
-
-    return "\n".join(last_lines)
-
-
-def process_message(message: BaseMessageChunk) -> RenderableType:
-    # Return markdown with the message content.
-    # Parse each message. Text should be rendered as is. Tool calls should be a text with tool name and args.
-
-    content = []
-    for item in message.content:
-        if isinstance(item, str):
-            content.append(item)
-        elif isinstance(item, dict):
-            content.append(f"Tool call: {item.get('name', '')} with args: {item.get('args', '')}")
-    return Markdown("\n".join(content))
 
 @dataclass
 class Agent:
@@ -90,112 +42,121 @@ class Agent:
 
     async def invoke(
         self,
-        message: BaseMessage | None,
+        message: BaseMessage | None = None,
         panel_title: str = "🤖 AI processing... ({char_count} characters)",
         border_style: str = "yellow",
-        code_generation_mode: bool = False,
-        code_lines_to_show: int = 18,
-        post_process_callback: Callable[[str], str] | None = None,
     ) -> str:
+        """Invoke the AI agent with a message and handle the streaming response."""
+        messages = self.total_messages + ([message] if message else [])
+        result = await self._stream_response(messages, panel_title, border_style)
+        
+        if not result:
+            return ""
+        
+        response = result.text()
+        
+        # Handle AI message and tool calls
+        await self._handle_ai_response(result)
+        
+        return response
+    
+    async def _stream_response(
+        self, 
+        messages: list[BaseMessage], 
+        panel_title: str, 
+        border_style: str
+    ) -> BaseMessageChunk | None:
+        """Stream the AI response with live updates."""
         result: BaseMessageChunk | None = None
-
+        
         console.print()  # Add spacing before streaming
-
+        
         with Live(console=console, refresh_per_second=10) as live:
-            async for chunk in self.llm.astream(self.total_messages + ([message] if message else [])):
+            async for chunk in self.llm.astream(messages):
                 if result is None:
                     result = chunk
                 else:
                     result += chunk
-
-                response = result.text()
-                char_count = len(response)
-
-                if code_generation_mode:
-                    # Code generation mode with syntax highlighting
-                    preview_code = _strip_markdown_code_fences(response)
-                    last_lines = _get_last_n_lines(preview_code, code_lines_to_show)
-
-                    # Create syntax highlighted code
-                    if last_lines.strip():
-                        syntax = Syntax(
-                            last_lines,
-                            "python",
-                            theme="monokai",
-                            line_numbers=False,
-                            word_wrap=True,
-                            background_color="default",
-                        )
-                    else:
-                        syntax = Syntax("# Generating code...", "python", theme="monokai")
-
-                    # Update the status with character count and code preview
-                    total_lines = len(preview_code.split("\n")) if preview_code.strip() else 0
-
-                    panel = Panel(
-                        syntax,
-                        title=panel_title.format(
-                            char_count=char_count,
-                            total_lines=total_lines,
-                            code_lines_to_show=code_lines_to_show,
-                        ),
-                        title_align="left",
-                        border_style=border_style,
-                    )
-                else:
-                    # Standard markdown mode
-                    markdown_content = process_message(result)
-
-                    # Display in a panel with character count
-                    panel = Panel(
-                        markdown_content,
-                        title=panel_title.format(char_count=char_count),
-                        title_align="left",
-                        border_style=border_style,
-                        highlight=True,
-                    )
                 
+                panel = self._create_response_panel(result, panel_title, border_style)
                 live.update(panel)
+        
+        return result
 
-        # Apply post-processing if provided
-        if post_process_callback:
-            response = post_process_callback(response)
+    @staticmethod
+    def _process_message(message: BaseMessageChunk) -> RenderableType:
+        # Return markdown with the message content.
+        # Parse each message. Text should be rendered as is. Tool calls should be a text with tool name and args.
 
-        # Print final status for code generation mode
-        if code_generation_mode:
-            final_char_count = len(response)
-            final_code = _strip_markdown_code_fences(response)
-            final_lines = len(final_code.split("\n")) if final_code.strip() else 0
-            console.print(
-                f"✅ Test code generation completed! ({final_char_count} characters, {final_lines} lines total)",
-                style="bold green",
-            )
+        if isinstance(message.content, str):
+            return Markdown(message.content)
 
-        if result:
-            # Add the AI message to the conversation history first
-            ai_message = AIMessage(
-                content=result.content,
-                tool_calls=result.tool_calls if hasattr(result, 'tool_calls') else None
-            )
-            self.state.add_message(ai_message)
+        content = []
+        for item in message.content:
+            if isinstance(item, str):
+                content.append(item)
 
-            # Call tools if needed
-            if result.tool_calls:
-                for tool_call in result.tool_calls:
-                    console.print(f"Tool call: {tool_call}")
-                    tool_name = tool_call.get("name", "")
-                    tool = self.tools.get(tool_name)
-                    if tool:
-                        tool_result = tool.invoke(tool_call)
-                        console.print(Panel(tool_result.content))
-                        # Create proper ToolMessage with tool_call_id and result content
-                        tool_message = ToolMessage(
-                            content=tool_result.content,
-                            tool_call_id=tool_call.get("id", "")
-                        )
-                        self.state.add_message(tool_message)
-                    else:
-                        console.print(f"Tool call: {tool_name} not found")
-                        self.state.add_message(AIMessage(content=f"Tool call: {tool_name} not found"))
+            elif isinstance(item, dict):
+                if item.get("type") == "tool_call":
+                    content.append(f"Tool call: {item.get('name', '')} with args: {item.get('args', '')}")
+                elif "text" in item:
+                    content.append(item.get("text", ""))
+                else:
+                    content.append(f"{item}")
 
-        return response
+        return Markdown("\n".join(content))
+    
+    @staticmethod
+    def _create_response_panel(
+        result: BaseMessageChunk, 
+        panel_title: str, 
+        border_style: str
+    ) -> Panel:
+        """Create a panel for displaying the streaming response."""
+        markdown_content = Agent._process_message(result)
+        char_count = len(result.text())
+        
+        return Panel(
+            markdown_content,
+            title=panel_title.format(char_count=char_count),
+            title_align="left",
+            border_style=border_style,
+            highlight=True,
+        )
+    
+    async def _handle_ai_response(self, result: BaseMessageChunk) -> None:
+        """Handle the AI response by adding it to state and processing tool calls."""
+
+        tool_calls: list[dict] | None = getattr(result, 'tool_calls', None)
+
+        # Add the AI message to the conversation history
+        ai_message = AIMessage(
+            content=result.content,
+            tool_calls=tool_calls
+        )
+        self.state.add_message(ai_message)
+        
+        # Process tool calls if any
+        if tool_calls:
+            await self._process_tool_calls(tool_calls)
+    
+    async def _process_tool_calls(self, tool_calls: list[dict]) -> None:
+        """Process and execute tool calls."""
+        for tool_call in tool_calls:
+            console.print(f"Tool call: {tool_call}")
+            tool_name = tool_call.get("name", "")
+            tool = self.tools.get(tool_name)
+            
+            if tool:
+                tool_result = tool.invoke(tool_call)
+                console.print(Panel(tool_result.content))
+                
+                tool_message = ToolMessage(
+                    content=tool_result.content,
+                    tool_call_id=tool_call.get("id", "")
+                )
+                self.state.add_message(tool_message)
+            else:
+                error_msg = f"Tool call: {tool_name} not found"
+                console.print(error_msg)
+                self.state.add_message(AIMessage(content=error_msg))
