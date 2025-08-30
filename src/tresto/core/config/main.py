@@ -44,6 +44,7 @@ class AIConfig(BaseModel):
     model: str
     max_iterations: int | None = None
     temperature: float | None = None
+    max_tokens: int = 16384
 
 
 class RecordingConfig(BaseModel):

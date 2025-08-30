@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 from rich.console import Console
+from rich.panel import Panel
 
 if TYPE_CHECKING:
     from tresto.ai.agent.state import TestAgentState
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
 console = Console()
 
 
-def _strip_markdown_code_fences(text: str) -> str:
+def _strip_markdown_code_fences(text: str) -> str | None:
     """Extract code from markdown fenced code blocks."""
     if not text.strip():
         return ""
@@ -45,10 +46,7 @@ def _strip_markdown_code_fences(text: str) -> str:
                 # (has substantial content after the opening ```)
                 potential_code = stripped_text[first_newline + 1 :].strip()
                 if potential_code and len(potential_code.split("\n")) > 1:
-                    console.print(
-                        "[yellow]⚠️  Found incomplete code block (missing closing ```) - extracting anyway[/yellow]"
-                    )
-                    return potential_code
+                    return None
                 # This is likely just malformed (empty or single line), return original
                 return text.strip()
 
@@ -129,6 +127,15 @@ async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
 
         # Try to extract code from the response
         extracted_code = _strip_markdown_code_fences(response)
+        if extracted_code is None:
+            last_error = (
+                "The code block format is not finished. "
+                "Valid code block format requires ```"
+            )
+            console.print(
+                Panel(last_error, title="❌ Invalid Code Block", title_align="left", border_style="red", highlight=True)
+            )
+            continue
 
         # Validate the extracted code
         is_valid, error_message = _validate_test_code(extracted_code)
@@ -142,7 +149,9 @@ async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
             last_error = error_message
             retry_count += 1
 
-        result = await agent.structured_response(GenerateCodeDecision, message=HumanMessage(content="Do you want to edit the code further?"))
+        result = await agent.structured_response(
+            GenerateCodeDecision, message=HumanMessage(content="Do you want to edit the code further?")
+        )
 
         if not result.wants_to_edit:
             break

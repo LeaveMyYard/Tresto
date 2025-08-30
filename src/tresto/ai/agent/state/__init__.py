@@ -93,7 +93,11 @@ class TestAgentState(BaseModel):
         return TestDatabase(test_directory=self.config.project.test_directory, test_name=self.test_name)
 
     def create_llm(self: TestAgentState, tools: list[Tool] | None = None) -> BaseChatModel:
-        return init_chat_model(f"{self.config.ai.connector}:{self.config.ai.model}").bind_tools(tools or [])
+        return init_chat_model(
+            f"{self.config.ai.connector}:{self.config.ai.model}",
+            max_tokens=self.config.ai.max_tokens,
+            temperature=self.config.ai.temperature,
+        ).bind_tools(tools or [])
 
     @property
     def all_messages(self) -> list[BaseMessage]:
