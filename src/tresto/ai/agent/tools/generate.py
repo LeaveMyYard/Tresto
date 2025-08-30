@@ -5,6 +5,7 @@ import textwrap
 from typing import TYPE_CHECKING
 
 from langchain_core.messages import HumanMessage
+from pydantic import BaseModel, Field
 from rich.console import Console
 
 if TYPE_CHECKING:
@@ -30,7 +31,7 @@ def _strip_markdown_code_fences(text: str) -> str:
     stripped_text = text.strip()
     if stripped_text.startswith("```"):
         # Find the first newline after opening ```
-        first_newline = stripped_text.find('\n')
+        first_newline = stripped_text.find("\n")
         if first_newline != -1:
             # Check if it ends with ```
             if stripped_text.endswith("```"):
@@ -42,19 +43,17 @@ def _strip_markdown_code_fences(text: str) -> str:
             else:
                 # Incomplete code block - check if this is a real incomplete block
                 # (has substantial content after the opening ```)
-                potential_code = stripped_text[first_newline + 1:].strip()
-                if potential_code and len(potential_code.split('\n')) > 1:
-                    console.print("[yellow]⚠️  Found incomplete code block (missing closing ```) - extracting anyway[/yellow]")
+                potential_code = stripped_text[first_newline + 1 :].strip()
+                if potential_code and len(potential_code.split("\n")) > 1:
+                    console.print(
+                        "[yellow]⚠️  Found incomplete code block (missing closing ```) - extracting anyway[/yellow]"
+                    )
                     return potential_code
-                else:
-                    # This is likely just malformed (empty or single line), return original
-                    return text.strip()
+                # This is likely just malformed (empty or single line), return original
+                return text.strip()
 
     # If no code blocks found, return original text
     return text.strip()
-
-
-MAX_RETRIES = 3
 
 
 def _validate_test_code(code: str) -> tuple[bool, str]:
@@ -67,6 +66,13 @@ def _validate_test_code(code: str) -> tuple[bool, str]:
         return False, "Missing required test function definition: async def test_<name>(page: Page):"
 
     return True, ""
+
+
+class GenerateCodeDecision(BaseModel):
+    """Model for deciding whether to continue editing the generated code."""
+
+    wants_to_edit: bool = Field(description="Whether the model wants to make further edits to the code")
+    reason: str = Field(description="Brief explanation of why the model wants to edit or is satisfied")
 
 
 async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
@@ -98,7 +104,7 @@ async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
     retry_count = 0
     last_error = ""
 
-    while retry_count < MAX_RETRIES:
+    while True:
         # Generate the code
         if retry_count == 0:
             prompt = "Now you should generate a test."
@@ -116,7 +122,7 @@ async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
 
         response = await agent.invoke(
             message=HumanMessage(content=prompt),
-            panel_title=f"🤖 Generating Test Code (attempt {retry_count + 1}/{MAX_RETRIES}) - {{char_count}} chars",
+            panel_title=f"🤖 Generating Test Code (attempt {retry_count + 1}) - {{char_count}} chars",
             border_style="blue" if retry_count == 0 else "yellow",
             max_lines=25,  # Show more lines to reduce chance of cutting off important content
         )
@@ -131,17 +137,12 @@ async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
             state.current_test_code = extracted_code
             if retry_count > 0:
                 console.print(f"✅ Successfully generated test code on attempt {retry_count + 1}")
-            return state
+        else:
+            # If validation failed, prepare for retry
+            last_error = error_message
+            retry_count += 1
 
-        # If validation failed, prepare for retry
-        last_error = error_message
-        retry_count += 1
+        result = await agent.structured_response(GenerateCodeDecision, message=HumanMessage(content="Do you want to edit the code further?"))
 
-        if retry_count < MAX_RETRIES:
-            console.print(f"❌ Code generation failed (attempt {retry_count}/{MAX_RETRIES}): {error_message}")
-            console.print("🔄 Retrying...")
-
-    # If we've exhausted all retries, use the last response as fallback
-    console.print(f"⚠️  Failed to generate valid test code after {MAX_RETRIES} attempts. Using raw response.")
-    state.current_test_code = response
-    return state
+        if not result.wants_to_edit:
+            break

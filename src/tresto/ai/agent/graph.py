@@ -64,7 +64,6 @@ class LangGraphTestAgent:
             await tool_record_user_input(self.state)
 
         await tool_run_test(self.state)
-        await inspect_html_tool(self.state)
 
         # if self.state.project_inspection_report is None:
         #     await project_inspect_cycle(self.state)

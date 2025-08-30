@@ -102,7 +102,7 @@ class Agent:
         return result
 
     @staticmethod
-    def _process_message(message: BaseMessageChunk, max_lines: int | None = None) -> RenderableType:
+    def _process_message(message: BaseMessageChunk, max_lines: int | None = None) -> RenderableType | None:
         # Return markdown with the message content.
         # Parse each message. Text should be rendered as is. Tool calls should be a text with tool name and args.
 
@@ -118,22 +118,26 @@ class Agent:
                         content.append(f"Tool call: {item.get('name', '')} with args: {item.get('args', '')}")
                     elif "text" in item:
                         content.append(item.get("text", ""))
-                    else:
-                        content.append(f"{item}")
             content_text = "\n".join(content)
 
         # Apply line limiting if specified
         if max_lines is not None and max_lines > 0:
             content_text = _get_last_n_lines(content_text, max_lines)
 
+        if not content_text:
+            return None
+
         return Markdown(content_text)
 
     @staticmethod
     def _create_response_panel(
         result: BaseMessageChunk, panel_title: str, border_style: str, max_lines: int | None = None
-    ) -> Panel:
+    ) -> RenderableType:
         """Create a panel for displaying the streaming response."""
         markdown_content = Agent._process_message(result, max_lines)
+
+        if markdown_content is None:
+            return ""
 
         raw_text = result.text()
         char_count = len(raw_text)
@@ -168,29 +172,42 @@ class Agent:
         if tool_calls:
             await self._process_tool_calls(tool_calls)
 
+    async def _run_tool(self, tool_call: dict) -> tuple[str, str]:
+        """Run a tool call."""
+        tool_name = tool_call.get("name", "")
+        tool = self.tools.get(tool_name)
+
+        if not tool:
+            raise KeyError(f"Tool {tool_name} not found")
+
+        tool_result = await tool.ainvoke(tool_call)
+        tool_message = ToolMessage(content=tool_result.content, tool_call_id=tool_call.get("id", ""))
+        self.state.add_message(tool_message)
+        return tool_name, tool_result.content
+
     async def _process_tool_calls(self, tool_calls: list[dict]) -> None:
         """Process and execute tool calls."""
         for tool_call in tool_calls:
-            tool_name = tool_call.get("name", "")
-            tool = self.tools.get(tool_name)
-
-            if tool:
-                tool_result = tool.invoke(tool_call)
+            try:
+                tool_name, tool_result = await self._run_tool(tool_call)
+            except Exception as e:  # noqa: BLE001
                 console.print(
                     Panel(
-                        tool_result.content,
-                        title=f"🔧 {tool_name}",
+                        f"❌ Error running tool {tool_name}: {e}",
+                        title="❌ Tool Error",
+                        title_align="left",
+                        border_style="red",
+                        highlight=True,
+                    )
+                )
+                self.state.add_message(AIMessage(content=f"Error running tool {tool_name}: {e}"))
+            else:
+                console.print(
+                    Panel(
+                        tool_result,
+                        title=f"🔧 Tool {tool_name}",
                         title_align="left",
                         border_style="green",
                         highlight=True,
                     )
                 )
-
-                tool_message = ToolMessage(content=tool_result.content, tool_call_id=tool_call.get("id", ""))
-                self.state.add_message(tool_message)
-            else:
-                error_msg = f"❌ Model tried to call tool {tool_name} but it was not found"
-                console.print(
-                    Panel(error_msg, title="❌ Tool Not Found", title_align="left", border_style="red", highlight=True)
-                )
-                self.state.add_message(AIMessage(content=error_msg))
