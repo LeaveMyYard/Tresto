@@ -6,7 +6,11 @@
 - What I would like to do is to run the current test code and then to inspect the HTML of the page.
 - This way the model will not be able to diverge from the initial test code.
 - Additionally, I think just the html investigation should be better without the "report" part. Report functionality seemed to be loosing information.
-- So we need to rewrite the playwright_iterate to html_explor
+- So we need to rewrite the playwright_iterate to html_explore
+
+## State: 
+DONE ✅
+
 
 
 # Note 2 (Utilizing image input)
@@ -15,9 +19,25 @@
 - I think this is a good idea to utilize for the tresto agent.
 - We need to add ability for model to see the screenshot after the playwright test is finished (in addition to the html investigation)
 
+## State: 
+DONE ✅
+
 
 # Note 3 (Automatically adding data-testid or other attributes)
 
 - Investigation: Sometimes it is really hard for the model to write the correct selectors for the elements.
 - I think it would be good to add ability for model to add data-testid or other attributes to the html investigation.
 - Because this feature would change the user's code (and not only test), I think it should be configurable.
+
+## State: 
+Re-evaluate the idea
+
+
+# Note 4:
+
+- Agent already works really good, but missing ability to see:
+  - Console Logs of the browser
+  - Screenshots right after the action is performed (sometimes a delay between the action and completing removes some information, like notifications)
+
+## State: 
+IN PROGRESS 🚧
