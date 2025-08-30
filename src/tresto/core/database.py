@@ -94,9 +94,7 @@ class TestDatabase(BaseModel):
             return []
 
         data_files = [
-            file.name
-            for file in self.test_data_dir.iterdir()
-            if file.is_file() and file.name != "metadata.txt"
+            file.name for file in self.test_data_dir.iterdir() if file.is_file() and file.name != "metadata.txt"
         ]
         return sorted(data_files)
 
@@ -156,25 +154,18 @@ class TestDatabase(BaseModel):
         messages = [
             (
                 HumanMessage(
-                    content="Playwright investigation from previous runs: \n"
-                    + (playwright_investigation or "")
+                    content="Playwright investigation from previous runs: \n" + (playwright_investigation or "")
                 )
                 if playwright_investigation
                 else None
             ),
             (
-                HumanMessage(
-                    content="Project inspection from previous runs: \n"
-                    + (project_inspection or "")
-                )
+                HumanMessage(content="Project inspection from previous runs: \n" + (project_inspection or ""))
                 if project_inspection
                 else None
             ),
             (
-                HumanMessage(
-                    content="Test insights from previous runs: \n"
-                    + (test_insights or "")
-                )
+                HumanMessage(content="Test insights from previous runs: \n" + (test_insights or ""))
                 if test_insights
                 else None
             ),

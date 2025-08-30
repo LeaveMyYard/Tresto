@@ -11,12 +11,9 @@ from .tools.ask_user import ask_user as tool_ask_user
 from .tools.deside_next_action import tool_decide_next_action
 from .tools.generate import generate_or_update_code
 from .tools.html_inspect import inspect_html_tool
-from .tools.screenshot_inspect import screenshot_inspect_tool
-from .tools.list_directory import list_directory
 from .tools.playwright_codegen import tool_record_user_input
-from .tools.project_inspect import project_inspect_cycle
-from .tools.read_file_content import read_file_content
 from .tools.run_test import run_test as tool_run_test
+from .tools.screenshot_inspect import screenshot_inspect_tool
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -68,7 +65,7 @@ class LangGraphTestAgent:
 
         await tool_run_test(self.state)
         await inspect_html_tool(self.state)
-        
+
         # if self.state.project_inspection_report is None:
         #     await project_inspect_cycle(self.state)
 

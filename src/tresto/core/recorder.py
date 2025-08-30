@@ -75,7 +75,7 @@ class BrowserRecorder:
                 continue
 
         succeeded = return_code == 0 and os.path.exists(output_abs_path)
-        
+
         if not succeeded:
             raise RuntimeError(f"Failed to record browser interaction: {last_error}")
 

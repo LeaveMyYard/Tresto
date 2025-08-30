@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-
 async def run_test(test_path: Path) -> TestRunResult:
     try:
         test_func = extract_test_function(test_path)

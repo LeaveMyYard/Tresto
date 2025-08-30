@@ -141,7 +141,7 @@ class TestTrestoPathFinder:
             project=ProjectConfig(name="test_project", base_url="https://example.com", test_directory="my_tests"),
             ai=AIConfig(connector="anthropic", model="claude-3-sonnet"),
         )
-        
+
         pathfinder = TrestoPathFinder(config=config, test_name="feature.test")
         assert pathfinder.tresto_root == Path("my_tests")
         assert pathfinder.test_file_path == Path("my_tests/feature/test_test.py")
@@ -156,7 +156,7 @@ class TestTrestoPathFinder:
             ("a.b.c.d.e", Path("a/b/c/d/test_e.py"), Path("a/b/c/d/recording_e.py")),
             ("module/sub.test", Path("module/sub/test_test.py"), Path("module/sub/recording_test.py")),
         ]
-        
+
         for test_name, expected_test_path, expected_recording_path in test_cases:
             pathfinder = TrestoPathFinder(config=sample_config, test_name=test_name)
             assert pathfinder.test_module_relative_path == expected_test_path
@@ -177,7 +177,7 @@ class TestTrestoPathFinder:
     def test_property_consistency(self, sample_config: TrestoConfig) -> None:
         """Test that all properties return consistent paths."""
         pathfinder = TrestoPathFinder(config=sample_config, test_name="auth.login.basic")
-        
+
         # Test that absolute paths are built correctly from relative paths
         assert pathfinder.test_file_path == pathfinder.tresto_root / pathfinder.test_module_relative_path
         assert (
@@ -188,7 +188,7 @@ class TestTrestoPathFinder:
     def test_pathfinder_immutability(self, sample_config: TrestoConfig) -> None:
         """Test that pathfinder properties are consistent across multiple calls."""
         pathfinder = TrestoPathFinder(config=sample_config, test_name="auth.login.basic")
-        
+
         # Call properties multiple times and ensure they return the same values
         for _ in range(3):
             assert pathfinder.tresto_root == Path("tests")
@@ -200,18 +200,18 @@ class TestTrestoPathFinder:
     def test_pydantic_model_behavior(self, sample_config: TrestoConfig) -> None:
         """Test that TrestoPathFinder behaves correctly as a Pydantic model."""
         pathfinder = TrestoPathFinder(config=sample_config, test_name="test.name")
-        
+
         # Test model dump
         model_dict = pathfinder.model_dump()
         assert "config" in model_dict
         assert "test_name" in model_dict
         assert model_dict["test_name"] == "test.name"
-        
+
         # Test model copy
         pathfinder_copy = pathfinder.model_copy()
         assert pathfinder_copy.test_name == pathfinder.test_name
         assert pathfinder_copy.config == pathfinder.config
-        
+
         # Test model copy with updates
         updated_pathfinder = pathfinder.model_copy(update={"test_name": "new.test"})
         assert updated_pathfinder.test_name == "new.test"

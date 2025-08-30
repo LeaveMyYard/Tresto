@@ -22,6 +22,7 @@ def create_bound_attrs_tool(soup: BeautifulSoup) -> Tool:
 
         if element is None:
             from tresto.ai.agent.tools.html_inspect.tools.core import get_navigation_suggestions
+
             suggestions = get_navigation_suggestions(soup, selector)
             return (
                 f"❌ Could not find element with selector: {selector}\n\n"

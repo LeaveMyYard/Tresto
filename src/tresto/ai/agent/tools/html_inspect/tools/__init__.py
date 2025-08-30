@@ -17,6 +17,7 @@ def create_bound_tools(soup: BeautifulSoup) -> list[Tool]:
         create_bound_text_tool(soup),
     ]
 
+
 __all__ = [
     "create_bound_tools",
 ]

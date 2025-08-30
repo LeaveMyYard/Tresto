@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import textwrap
 import re
+import textwrap
 from typing import TYPE_CHECKING
 
 from langchain_core.messages import HumanMessage
@@ -18,24 +18,24 @@ def _strip_markdown_code_fences(text: str) -> str:
     """Extract code from markdown fenced code blocks."""
     if not text.strip():
         return ""
-    
+
     # Try to extract the first fenced code block with optional language specifier
     # This pattern handles: ```python, ```py, or just ```
     pattern = re.compile(r"```\s*(?:python|py)?\s*\r?\n([\s\S]*?)\r?\n```", re.IGNORECASE | re.MULTILINE)
     match = pattern.search(text)
     if match:
         return match.group(1).strip()
-    
+
     # Fallback: handle code blocks that wrap the entire text
     stripped_text = text.strip()
     if stripped_text.startswith("```") and stripped_text.endswith("```"):
         # Remove the first and last ``` lines
-        lines = stripped_text.split('\n')
+        lines = stripped_text.split("\n")
         if len(lines) >= 2:
             # Remove first line (```python or similar) and last line (```)
             code_lines = lines[1:-1]
-            return '\n'.join(code_lines).strip()
-    
+            return "\n".join(code_lines).strip()
+
     # If no code blocks found, return original text
     return text.strip()
 
@@ -47,21 +47,17 @@ def _validate_test_code(code: str) -> tuple[bool, str]:
     """Validate that the extracted code is a proper Playwright test."""
     if not code.strip():
         return False, "No code content found"
-    
-    # Check for required imports
-    if "from playwright.async_api import Page" not in code:
-        return False, "Missing required import: from playwright.async_api import Page"
-    
+
     # Check for test function definition
     if not re.search(r"async def test_\w+\(page:\s*Page\):", code):
         return False, "Missing required test function definition: async def test_<name>(page: Page):"
-    
+
     return True, ""
 
 
 async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
     """Generate or update test code using the agent's process method."""
-    
+
     # Create agent for code generation
     agent = state.create_agent(
         """\
@@ -87,7 +83,7 @@ async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
 
     retry_count = 0
     last_error = ""
-    
+
     while retry_count < MAX_RETRIES:
         # Generate the code
         if retry_count == 0:
@@ -106,30 +102,31 @@ async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
 
         response = await agent.invoke(
             message=HumanMessage(content=prompt),
-            panel_title=f"🤖 Generating Test Code (attempt {retry_count + 1}/{MAX_RETRIES}) - {{char_count}} chars",
+            panel_title=f"🤖 Generating Test Code (attempt {retry_count + 1}/{MAX_RETRIES}) - {{char_count}} chars, {{total_lines}} lines [dim](showing last {{showing_lines}} lines)[/dim]",
             border_style="blue" if retry_count == 0 else "yellow",
+            max_lines=20,
         )
-        
+
         # Try to extract code from the response
         extracted_code = _strip_markdown_code_fences(response)
-        
+
         # Validate the extracted code
         is_valid, error_message = _validate_test_code(extracted_code)
-        
+
         if is_valid:
             state.current_test_code = extracted_code
             if retry_count > 0:
                 console.print(f"✅ Successfully generated test code on attempt {retry_count + 1}")
             return state
-        
+
         # If validation failed, prepare for retry
         last_error = error_message
         retry_count += 1
-        
+
         if retry_count < MAX_RETRIES:
             console.print(f"❌ Code generation failed (attempt {retry_count}/{MAX_RETRIES}): {error_message}")
             console.print("🔄 Retrying...")
-    
+
     # If we've exhausted all retries, use the last response as fallback
     console.print(f"⚠️  Failed to generate valid test code after {MAX_RETRIES} attempts. Using raw response.")
     state.current_test_code = response

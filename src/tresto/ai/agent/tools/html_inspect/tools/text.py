@@ -21,6 +21,7 @@ def create_bound_text_tool(soup: BeautifulSoup) -> Tool:
 
         if element is None:
             from tresto.ai.agent.tools.html_inspect.tools.core import get_navigation_suggestions
+
             suggestions = get_navigation_suggestions(soup, selector)
             return (
                 f"❌ Could not find element with selector: {selector}\n\n"
@@ -36,4 +37,3 @@ def create_bound_text_tool(soup: BeautifulSoup) -> Tool:
         return f"📝 Text content of '{selector}':\n{trimmed_text}"
 
     return text
-

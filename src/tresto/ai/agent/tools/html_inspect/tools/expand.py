@@ -11,7 +11,9 @@ from tresto.ai.agent.tools.html_inspect.tools.core import (
 
 
 class ExpandArgs(BaseModel):
-    selector: str = Field(description="CSS selector for the element to expand (can contain spaces for descendant selectors)")
+    selector: str = Field(
+        description="CSS selector for the element to expand (can contain spaces for descendant selectors)"
+    )
     depth: int = Field(3, description="Maximum depth to show (default: 3)")
 
     @field_validator("depth")
@@ -33,6 +35,7 @@ def create_bound_expand_tool(soup: BeautifulSoup) -> Tool:
 
         if element is None:
             from tresto.ai.agent.tools.html_inspect.tools.core import get_navigation_suggestions
+
             suggestions = get_navigation_suggestions(soup, selector)
             return (
                 f"❌ Could not find element with selector: {selector}\n\n"
@@ -47,4 +50,3 @@ def create_bound_expand_tool(soup: BeautifulSoup) -> Tool:
         )
 
     return expand
-

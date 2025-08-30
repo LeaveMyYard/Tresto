@@ -32,18 +32,18 @@ async def ask_user(state: TestAgentState) -> TestAgentState:
 
     # Stream the AI's question generation with live display
     question_content = ""
-    
+
     console.print()  # Add spacing before streaming
-    
+
     with Live(console=console, refresh_per_second=10) as live:
         async for chunk in llm.astream(state.messages + [ask_user_message]):
             if chunk.content:
                 question_content += str(chunk.content)
-                
+
                 # Create markdown content for the question
                 markdown_content = Markdown(question_content, style="bold")
                 char_count = len(question_content)
-                
+
                 # Display in a panel with character count and padding
                 panel = Panel(
                     markdown_content,
@@ -54,7 +54,7 @@ async def ask_user(state: TestAgentState) -> TestAgentState:
                     padding=(1, 2),
                 )
                 live.update(panel)
-    
+
     # Get user input with a styled prompt
     console.print()  # Add spacing before input
     answer = await asyncio.to_thread(
@@ -63,7 +63,7 @@ async def ask_user(state: TestAgentState) -> TestAgentState:
             console=console,
         )
     )
-    
+
     state.messages.append(AIMessage(content=question_content))
     state.messages.append(HumanMessage(content=answer))
     return state

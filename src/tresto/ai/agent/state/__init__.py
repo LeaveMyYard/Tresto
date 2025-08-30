@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import yaml
+import textwrap
 from contextlib import contextmanager
 from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING
-import textwrap
 
+import yaml
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.tools import Tool
@@ -74,7 +74,7 @@ class TestAgentState(BaseModel):
             system_message=SystemMessage(content=textwrap.dedent(system_message)),
             tools={tool.name: tool for tool in tools or []},
         )
-    
+
     def add_message(self, message: BaseMessage | dict) -> None:
         with open("debug.txt", "a") as f:
             f.write(f"{message}\n")
@@ -90,10 +90,7 @@ class TestAgentState(BaseModel):
     @property
     def test_database(self) -> TestDatabase:
         """Get the test database for persistent storage."""
-        return TestDatabase(
-            test_directory=self.config.project.test_directory,
-            test_name=self.test_name
-        )
+        return TestDatabase(test_directory=self.config.project.test_directory, test_name=self.test_name)
 
     def create_llm(self: TestAgentState, tools: list[Tool] | None = None) -> BaseChatModel:
         return init_chat_model(f"{self.config.ai.connector}:{self.config.ai.model}").bind_tools(tools or [])

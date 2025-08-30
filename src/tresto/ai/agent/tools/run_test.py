@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 
 console = Console()
 
+
 async def run_test(state: TestAgentState) -> TestAgentState:
     console.print(f"🔍 Running {state.test_file_path}...")
 
@@ -23,7 +24,7 @@ async def run_test(state: TestAgentState) -> TestAgentState:
         console.print(f"✅ Successfully ran the test in {state.last_run_result.duration_s:.2f} seconds")
     else:
         console.print(f"❌ Failed to run the test in {state.last_run_result.duration_s:.2f} seconds")
-        
+
         # Display stdout in a panel if there's content
         if state.last_run_result.stdout and state.last_run_result.stdout.strip():
             stdout_panel = Panel(
@@ -34,7 +35,7 @@ async def run_test(state: TestAgentState) -> TestAgentState:
                 highlight=True,
             )
             console.print(stdout_panel)
-        
+
         # Display stderr in a panel if there's content
         if state.last_run_result.stderr and state.last_run_result.stderr.strip():
             stderr_panel = Panel(

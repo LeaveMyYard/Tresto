@@ -1,14 +1,10 @@
 from __future__ import annotations
 
-import textwrap
 from typing import TYPE_CHECKING
 
-from langchain_core.messages import AIMessage, HumanMessage
-from rich.console import Console
-from rich.live import Live
-from rich.markdown import Markdown
-from rich.panel import Panel
+from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
+from rich.console import Console
 
 from tresto.ai.agent.state import Decision
 

@@ -20,7 +20,7 @@ console = Console()
 
 async def inspect_html_tool(state: TestAgentState) -> TestAgentState:
     """Tool for interactively exploring HTML content using BeautifulSoup."""
-    
+
     # Check if we have HTML content to inspect
     if state.last_run_result is None or state.last_run_result.soup is None:
         error_panel = Panel(
@@ -31,16 +31,16 @@ async def inspect_html_tool(state: TestAgentState) -> TestAgentState:
             highlight=True,
         )
         console.print(error_panel)
-        
+
         state.messages.append(
             HumanMessage(content="Error: No HTML content available to inspect. Run a test first to capture HTML.")
         )
         return state
-    
+
     soup = state.last_run_result.soup
     agent = state.create_agent(
         system_message="""You are exploring HTML content from a web page using BeautifulSoup. Use tools to explore the HTML content.""",
-        tools=create_bound_tools(soup)
+        tools=create_bound_tools(soup),
     )
 
     while True:

@@ -14,6 +14,7 @@ MAX_ATTRS_TOTAL_LENGTH = 200  # For combined attributes string
 MAX_VIEW_LENGTH = 2000  # For complete HTML views
 MAX_SUGGESTIONS_LENGTH = 500  # For navigation suggestions
 
+
 def trim_content(content: str, max_length: int) -> str:
     """Trim content to specified length with ellipsis if needed."""
     if len(content) <= max_length:
@@ -28,6 +29,7 @@ def find_element_by_css_selector(soup: BeautifulSoup, selector: str) -> Any | No
         return soup.select_one(selector)
     except Exception:  # noqa: BLE001
         return None
+
 
 def generate_collapsed_html_view(soup: BeautifulSoup, max_depth: int = 2) -> str:
     """Generate a collapsed view of HTML showing only top-level structure."""
