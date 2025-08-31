@@ -10,22 +10,29 @@ from playwright.async_api import Browser, BrowserContext, Page, async_playwright
 async def browser() -> AsyncIterable[Browser]:
     """Create a browser instance for the test session."""
     async with async_playwright() as p:
-        browser = await p.firefox.launch(headless=False)
-        yield browser
-        await browser.close()
+        browser = await p.chromium.launch(headless=False)
+
+        try:
+            yield browser
+        finally:
+            await browser.close()
 
 
 @pytest.fixture
 async def context(browser: Browser) -> AsyncIterable[BrowserContext]:
     """Create a new browser context for each test."""
-    context = await browser.new_context()
-    yield context
-    await context.close()
+    try:
+        context = await browser.new_context()
+        yield context
+    finally:
+        await context.close()
 
 
 @pytest.fixture
 async def page(context: BrowserContext) -> AsyncIterable[Page]:
     """Create a new page for each test."""
     page = await context.new_page()
-    yield page
-    await page.close()
+    try:
+        yield page
+    finally:
+        await page.close()

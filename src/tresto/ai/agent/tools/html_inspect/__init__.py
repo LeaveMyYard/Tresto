@@ -9,6 +9,7 @@ from rich.live import Live
 from rich.markdown import Markdown
 from rich.panel import Panel
 
+from tresto.ai.agent.tools.html_inspect.recording import RecordingManager, RecordingSources
 from tresto.ai.agent.tools.html_inspect.tools import create_bound_tools
 
 if TYPE_CHECKING:
@@ -19,12 +20,12 @@ console = Console()
 
 
 async def inspect_html_tool(state: TestAgentState) -> TestAgentState:
-    """Tool for interactively exploring HTML content using BeautifulSoup."""
+    """Tool for interactively exploring HTML content using a time-aware recording manager."""
 
-    # Check if we have HTML content to inspect
-    if state.last_run_result is None or state.last_run_result.soup is None:
+    # Check if we have a recording to inspect
+    if state.last_run_result is None or state.last_run_result.recording is None:
         error_panel = Panel(
-            "No HTML content available to inspect. Run a test first to capture HTML.",
+            "No recording available to inspect. Run a test first to capture a recording.",
             title="❌ No HTML Data",
             title_align="left",
             border_style="red",
@@ -33,14 +34,14 @@ async def inspect_html_tool(state: TestAgentState) -> TestAgentState:
         console.print(error_panel)
 
         state.messages.append(
-            HumanMessage(content="Error: No HTML content available to inspect. Run a test first to capture HTML.")
+            HumanMessage(content="Error: No recording available to inspect. Run a test first to capture a recording.")
         )
         return state
 
-    soup = state.last_run_result.soup
+    manager = state.last_run_result.recording
     agent = state.create_agent(
-        system_message="""You are exploring HTML content from a web page using BeautifulSoup. Use tools to explore the HTML content.""",
-        tools=create_bound_tools(soup),
+        system_message="""You are exploring HTML content from a web page recording. Use tools to explore the HTML and screenshots at specific timestamps.""",
+        tools=create_bound_tools(manager),
     )
 
     while True:

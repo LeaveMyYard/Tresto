@@ -1,4 +1,5 @@
-from bs4 import BeautifulSoup
+from datetime import datetime
+
 from langchain.tools import Tool, tool
 from pydantic import BaseModel, Field
 
@@ -7,16 +8,23 @@ from tresto.ai.agent.tools.html_inspect.tools.core import (
     find_element_by_css_selector,
     trim_content,
 )
+from tresto.ai.agent.tools.html_inspect.recording import RecordingManager
 
 
 class TextArgs(BaseModel):
     selector: str = Field(description="CSS selector for the element (can contain spaces for descendant selectors)")
+    timestamp: datetime | None = Field(None, description="Timestamp to inspect at (UTC, optional)")
 
 
-def create_bound_text_tool(soup: BeautifulSoup) -> Tool:
+def create_bound_text_tool(manager: RecordingManager) -> Tool:
     @tool(description="Show text content of element", args_schema=TextArgs)
-    def text(selector: str) -> str:
+    def text(selector: str, timestamp: datetime | None = None) -> str:
         """Show text content of element using CSS selector."""
+        try:
+            soup = manager[timestamp].soup
+        except ValueError as e:
+            return f"❌ {e}"
+
         element = find_element_by_css_selector(soup, selector)
 
         if element is None:

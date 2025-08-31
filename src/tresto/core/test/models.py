@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
-from bs4 import BeautifulSoup
-from PIL.Image import Image
+from tresto.ai.agent.tools.html_inspect.recording import RecordingManager
 
 
 @dataclass
@@ -12,8 +11,8 @@ class TestRunResult:
     stdout: str | None = None
     stderr: str | None = None
 
-    soup: BeautifulSoup | None = None
-    screenshot: Image | None = None
+    # Recording manager with time-based access to artifacts
+    recording: RecordingManager | None = None
 
     def __str__(self) -> str:
         return (

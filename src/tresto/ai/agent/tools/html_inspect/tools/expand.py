@@ -1,7 +1,9 @@
-from bs4 import BeautifulSoup
+from datetime import datetime
+
 from langchain.tools import Tool, tool
 from pydantic import BaseModel, Field, field_validator
 
+from tresto.ai.agent.tools.html_inspect.recording import RecordingManager
 from tresto.ai.agent.tools.html_inspect.tools.core import (
     MAX_VIEW_LENGTH,
     find_element_by_css_selector,
@@ -15,6 +17,7 @@ class ExpandArgs(BaseModel):
         description="CSS selector for the element to expand (can contain spaces for descendant selectors)"
     )
     depth: int = Field(3, description="Maximum depth to show (default: 3)")
+    timestamp: datetime | None = Field(None, description="Timestamp to inspect at (UTC, optional)")
 
     @field_validator("depth")
     def validate_depth(cls, v: int) -> int:
@@ -23,13 +26,18 @@ class ExpandArgs(BaseModel):
         return v
 
 
-def create_bound_expand_tool(soup: BeautifulSoup) -> Tool:
+def create_bound_expand_tool(manager: RecordingManager) -> Tool:
     @tool(description="Expand specific element using CSS selector", args_schema=ExpandArgs)
-    def expand(selector: str, depth: int = 3) -> str:
+    def expand(selector: str, depth: int = 3, timestamp: datetime | None = None) -> str:
         """Expand specific element using CSS selector with specified depth."""
         # Validate depth
         if depth < 1 or depth > 5:
             return "❌ Depth must be between 1 and 5"
+
+        try:
+            soup = manager[timestamp].soup
+        except ValueError as e:
+            return f"❌ {e}"
 
         element = find_element_by_css_selector(soup, selector)
 

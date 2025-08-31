@@ -18,10 +18,10 @@ console = Console()
 async def screenshot_inspect_tool(state: TestAgentState) -> TestAgentState:
     """Tool for sending screenshot to AI for analysis."""
 
-    # Check if we have screenshot content to inspect
-    if state.last_run_result is None or state.last_run_result.screenshot is None:
+    # Check if we have recording with a screenshot to inspect
+    if state.last_run_result is None or state.last_run_result.recording is None:
         error_panel = Panel(
-            "No screenshot available to inspect. Run a test first to capture a screenshot.",
+            "No recording available to inspect. Run a test first to capture a recording.",
             title="❌ No Screenshot Data",
             title_align="left",
             border_style="red",
@@ -30,11 +30,23 @@ async def screenshot_inspect_tool(state: TestAgentState) -> TestAgentState:
         console.print(error_panel)
 
         state.messages.append(
-            HumanMessage(content="Error: No screenshot available to inspect. Run a test first to capture a screenshot.")
+            HumanMessage(content="Error: No recording available to inspect. Run a test first to capture a recording.")
         )
         return state
 
-    screenshot = state.last_run_result.screenshot
+    try:
+        screenshot = state.last_run_result.recording.get_screenshot_at(None)
+    except Exception as e:  # noqa: BLE001
+        error_panel = Panel(
+            f"No screenshot available in recording: {e}",
+            title="❌ No Screenshot Data",
+            title_align="left",
+            border_style="red",
+            highlight=True,
+        )
+        console.print(error_panel)
+        state.messages.append(HumanMessage(content=f"Error: No screenshot available in recording: {e}"))
+        return state
 
     try:
         # Convert PIL Image to base64 encoded string

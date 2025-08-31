@@ -3,16 +3,18 @@ from __future__ import annotations
 import io
 import time
 from contextlib import redirect_stderr, redirect_stdout
+from datetime import UTC, datetime
 from traceback import format_exc
 from typing import TYPE_CHECKING
 
-from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
+
+from tresto.ai.agent.tools.html_inspect.recording import RecordingManager, RecordingSources
+from tresto.ai.agent.tools.screenshot import screenshot_page
 
 from .errors import BaseTestExtractionError
 from .extract import extract_test_function
 from .models import TestRunResult
-from .screenshot import screenshot_page
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -35,6 +37,8 @@ async def run_test(test_path: Path) -> TestRunResult:
     html = None
     img = None
     start = time.perf_counter()
+    start_dt = datetime.now(UTC)
+    trace_path = None
 
     # Capture stdout and stderr during test execution
     stdout_buffer = io.StringIO()
@@ -45,6 +49,7 @@ async def run_test(test_path: Path) -> TestRunResult:
             async with async_playwright() as pw:
                 browser = await pw.chromium.launch(channel="chrome", headless=False)
                 context = await browser.new_context()
+                await context.tracing.start(screenshots=True, snapshots=True, sources=False)
                 page = await context.new_page()
                 try:
                     await test_func(page)
@@ -56,6 +61,10 @@ async def run_test(test_path: Path) -> TestRunResult:
                     html = await page.content()
                     img = await screenshot_page(page, "png")
                     img.save("screenshot.png")
+                    await context.tracing.stop(path="trace.zip")
+                    from pathlib import Path as _Path
+
+                    trace_path = _Path("trace.zip")
                     await browser.close()
     except Exception:  # noqa: BLE001
         # Catch any outer exceptions (e.g., playwright setup failures)
@@ -68,7 +77,15 @@ async def run_test(test_path: Path) -> TestRunResult:
         stderr_content = stderr_buffer.getvalue()
 
     duration = time.perf_counter() - start
-    soup = BeautifulSoup(html, "html.parser") if html else None
+    end_dt = datetime.now(UTC)
+    latest_html = html if html is not None else None
+    manager = RecordingManager(
+        trace_path=trace_path,
+        time_range=(start_dt, end_dt) if trace_path is not None else None,
+        latest_html=latest_html,
+        latest_screenshot=img,
+        sources=RecordingSources(html_snapshots={}, screenshots={}),
+    )
 
     return TestRunResult(
         success=success,
@@ -76,6 +93,5 @@ async def run_test(test_path: Path) -> TestRunResult:
         traceback=tb,
         stdout=stdout_content,
         stderr=stderr_content,
-        soup=soup,
-        screenshot=img,
+        recording=manager,
     )
