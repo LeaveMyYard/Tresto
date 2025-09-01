@@ -220,18 +220,18 @@ class Agent:
                 console.print(
                     Panel(
                         f"❌ Error running tool: {e}",
-                        title="❌ Tool Error",
+                        title=f"❌ Tool Error [dim]{tool_call['args']}[/dim]",
                         title_align="left",
                         border_style="red",
                         highlight=True,
                     )
                 )
-                self.state.add_message(AIMessage(content=f"Error running tool: {e}"))
+                self.state.add_message(ToolMessage(content=f"Error running tool: {e}", tool_call_id=tool_call.get("id", "")))
             else:
                 console.print(
                     Panel(
                         tool_result,
-                        title=f"🔧 Tool {tool_name}",
+                        title=f"🔧 Tool {tool_name} [dim]{tool_call['args']}[/dim]",
                         title_align="left",
                         border_style="green",
                         highlight=True,

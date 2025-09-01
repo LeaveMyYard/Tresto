@@ -44,6 +44,18 @@ async def inspect_html_tool(state: TestAgentState) -> TestAgentState:
         tools=create_bound_tools(manager),
     )
 
+    current_status_message = f"Last Run Result:\n{manager.to_text()}"
+    console.print(
+        Panel(
+            current_status_message,
+            title="Last Run Result",
+            title_align="left",
+            border_style="yellow",
+            highlight=True,
+        )
+    )
+    state.messages.append(HumanMessage(content=current_status_message))
+
     while True:
         result = await agent.invoke(
             message=HumanMessage(content="Use tools or respond with 'done' to finish."),

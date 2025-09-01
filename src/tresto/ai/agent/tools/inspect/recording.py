@@ -3,7 +3,7 @@ from __future__ import annotations
 import io
 import json
 import zipfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 class RecordingSources:
     html_snapshots: dict[datetime, str]
     screenshots: dict[datetime, Image]
+    logs: list[tuple[datetime, str]] = field(default_factory=list)
 
     @property
     def time_range(self) -> tuple[datetime, datetime]:
@@ -63,10 +64,29 @@ class RecordingManager:
                 now = datetime.now(UTC)
                 self._time_range = (now, now)
 
+    def to_text(self) -> str:
+        stats = self.get_stats()
+        start = stats["time_start"]
+        end = stats["time_end"]
+        duration_s = stats["duration_s"]
+        start_str = start.isoformat() if start else "n/a"
+        end_str = end.isoformat() if end else "n/a"
+        return (
+            "🎞️ Recording Stats:\n"
+            f"Trace: {'yes' if stats['has_trace'] else 'no'}\n"
+            f"Trace path: {stats['trace_path']}\n"
+            f"Time range: {start_str} — {end_str} (duration {duration_s:.3f}s)\n"
+            f"HTML snapshots: {stats['num_html_snapshots']}\n"
+            f"Screenshots: {stats['num_screenshots']}\n"
+            f"Logs: {stats['num_logs']}"
+        )
+
+
     # --- Trace loading ---
     def _load_sources_from_trace(self, trace_path: Path) -> RecordingSources:
         html_snapshots: dict[datetime, str] = {}
         screenshots: dict[datetime, Image] = {}
+        logs: list[tuple[datetime, str]] = []
 
         try:
             with zipfile.ZipFile(trace_path, "r") as zf:
@@ -144,7 +164,7 @@ class RecordingManager:
                         return to_dt(ts_val_local)
                     return None
 
-                # Parse events and extract html and screenshots
+                # Parse events and extract html, screenshots, and logs
                 for ev in events:
                     ts: datetime | None = choose_event_dt(ev)
 
@@ -202,11 +222,61 @@ class RecordingManager:
                                 # Ignore unreadable resource
                                 pass
 
+                    # Logs: console/page errors/network summaries
+                    if ts is not None:
+                        level: str | None = None
+                        msg: str | None = None
+
+                        ev_type = ev.get("type")
+                        ev_event = ev.get("event")
+                        ev_name = ev.get("name")
+
+                        # Console messages
+                        if (
+                            (isinstance(ev_type, str) and "console" in ev_type.lower())
+                            or (isinstance(ev_event, str) and "console" in ev_event.lower())
+                            or (isinstance(ev_name, str) and "console" in ev_name.lower())
+                        ):
+                            level = (ev.get("level") or (data or {}).get("type") or "log") if isinstance(data, dict) else (ev.get("level") or "log")
+                            msg = (
+                                (data or {}).get("text") if isinstance(data, dict) else None
+                            ) or ev.get("text") or ev.get("message")
+
+                        # Page errors
+                        if msg is None and (
+                            (isinstance(ev_type, str) and "error" in ev_type.lower())
+                            or (isinstance(ev_event, str) and "error" in ev_event.lower())
+                        ):
+                            level = "error"
+                            if isinstance(data, dict):
+                                msg = data.get("error") or data.get("message") or data.get("name")
+                            msg = msg or ev.get("error") or ev.get("message")
+
+                        # Network requests (basic summary)
+                        if msg is None and isinstance(data, dict):
+                            url = data.get("url")
+                            method = data.get("method")
+                            status = data.get("status") or data.get("statusCode")
+                            if url and (method or status):
+                                level = "network"
+                                if method and status:
+                                    msg = f"{method} {url} -> {status}"
+                                elif method:
+                                    msg = f"{method} {url}"
+                                else:
+                                    msg = f"{url} -> {status}"
+
+                        if msg:
+                            text = str(msg)
+                            if level:
+                                text = f"[{level}] {text}"
+                            logs.append((ts, text))
+
         except (OSError, zipfile.BadZipFile, KeyError, ValueError):
             # If anything fails, return what we managed to parse (possibly empty)
-            return RecordingSources(html_snapshots=html_snapshots, screenshots=screenshots)
+            return RecordingSources(html_snapshots=html_snapshots, screenshots=screenshots, logs=logs)
 
-        return RecordingSources(html_snapshots=html_snapshots, screenshots=screenshots)
+        return RecordingSources(html_snapshots=html_snapshots, screenshots=screenshots, logs=logs)
 
     @staticmethod
     def _html_value_to_string(value: object) -> str | None:
@@ -318,7 +388,19 @@ class RecordingManager:
             "duration_s": max(0.0, (end - start).total_seconds()),
             "num_html_snapshots": len(self._sources.html_snapshots),
             "num_screenshots": len(self._sources.screenshots),
+            "num_logs": len(self._sources.logs),
         }
+
+    def get_logs(self, start_time: datetime, end_time: datetime | None) -> list[tuple[datetime, str]]:
+        start, end_default = self.time_range
+        end = end_default if end_time is None else end_time
+        if start_time > end:
+            return []
+        return [
+            (ts, text)
+            for ts, text in self._sources.logs
+            if start_time <= ts <= end
+        ]
 
     # Snapshot accessors
     def __getitem__(self, timestamp: datetime | None) -> RecordingSnapshot:
