@@ -7,8 +7,8 @@ import pytest
 from bs4 import BeautifulSoup
 from PIL import Image
 
-from tresto.ai.agent.tools.html_inspect.recording import RecordingManager, RecordingSources
-from tresto.ai.agent.tools.html_inspect.tools import create_bound_tools
+from tresto.ai.agent.tools.inspect.recording import RecordingManager, RecordingSources
+from tresto.ai.agent.tools.inspect.tools import create_bound_tools
 
 
 def _img(w: int = 10, h: int = 10) -> Image.Image:
@@ -39,7 +39,7 @@ def _manager() -> RecordingManager:
         html_snapshots={t0.replace(microsecond=200_000): html0, t1: html1},
         screenshots={t0.replace(microsecond=300_000): _img(10, 10), t0.replace(second=1): _img(20, 10)},
     )
-    return RecordingManager(trace_path=None, time_range=(t0, t2), latest_html=html1, latest_screenshot=_img(30, 30), sources=sources)
+    return RecordingManager(trace_path=None, time_range=(t0, t2), sources=sources)
 
 
 def _tool_dict(manager: RecordingManager) -> dict[str, Any]:

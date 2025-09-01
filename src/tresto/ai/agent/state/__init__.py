@@ -29,8 +29,8 @@ if TYPE_CHECKING:
 class Decision(StrEnum):
     MODIFY_CODE = "modify_code"
     RUN_TEST = "run_test"
-    HTML_INSPECT = "html_inspect"
-    SCREENSHOT_INSPECT = "screenshot_inspect"
+    INSPECT = "inspect"
+    # SCREENSHOT_INSPECT = "screenshot_inspect"
     ASK_USER = "ask_user"
     RECORD_USER_INPUT = "record_user_input"
     DESIDE_NEXT_ACTION = "decide_next_action"
@@ -39,6 +39,21 @@ class Decision(StrEnum):
     # PROJECT_INSPECT = "project_inspect"
     # INSPECT_SITE = "inspect_site"
     FINISH = "finish"
+
+    @property
+    def description(self) -> str:
+        return {
+            self.MODIFY_CODE: "Modify the test code",
+            self.RUN_TEST: "Run the test",
+            self.INSPECT: (
+                "Inspect the state of the website during the test run by inspecting snapshots by time. "
+                "(By HTML or screenshots)"
+            ),
+            self.ASK_USER: "Ask the user for input",
+            self.RECORD_USER_INPUT: "Record the user input using playwright codegen",
+            self.DESIDE_NEXT_ACTION: "Decide the next action to take",
+            self.FINISH: "Finish working (task is finished or task can not be finished)",
+        }[self]
 
 
 class RunningTestState(BaseModel):
@@ -97,6 +112,7 @@ class TestAgentState(BaseModel):
             f"{self.config.ai.connector}:{self.config.ai.model}",
             max_tokens=self.config.ai.max_tokens,
             temperature=self.config.ai.temperature,
+            max_retries=3,
         ).bind_tools(tools or [])
 
     @property

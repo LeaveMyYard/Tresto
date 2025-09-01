@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from tresto.ai.agent.tools.html_inspect.recording import RecordingManager
+from tresto.ai.agent.tools.inspect.recording import RecordingManager
 
 
 @dataclass

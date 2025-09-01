@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 from playwright.async_api import async_playwright
 
-from tresto.ai.agent.tools.html_inspect.recording import RecordingManager, RecordingSources
+from tresto.ai.agent.tools.inspect.recording import RecordingManager
 from tresto.ai.agent.tools.screenshot import screenshot_page
 
 from .errors import BaseTestExtractionError
@@ -58,6 +58,7 @@ async def run_test(test_path: Path) -> TestRunResult:
                     success = False
                     tb = format_exc(limit=20)
                 finally:
+                    # Optional: capture a final screenshot artifact
                     html = await page.content()
                     img = await screenshot_page(page, "png")
                     img.save("screenshot.png")
@@ -78,13 +79,9 @@ async def run_test(test_path: Path) -> TestRunResult:
 
     duration = time.perf_counter() - start
     end_dt = datetime.now(UTC)
-    latest_html = html if html is not None else None
     manager = RecordingManager(
         trace_path=trace_path,
         time_range=(start_dt, end_dt) if trace_path is not None else None,
-        latest_html=latest_html,
-        latest_screenshot=img,
-        sources=RecordingSources(html_snapshots={}, screenshots={}),
     )
 
     return TestRunResult(

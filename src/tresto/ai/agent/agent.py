@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import random
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -84,22 +86,46 @@ class Agent:
     async def _stream_response(
         self, messages: list[BaseMessage], panel_title: str, border_style: str, max_lines: int | None = None
     ) -> BaseMessageChunk | None:
-        """Stream the AI response with live updates."""
-        result: BaseMessageChunk | None = None
+        """Stream the AI response with retries on transient overloads."""
+        max_retries = 3
+        base_delay_s = 1.0
 
-        console.print()  # Add spacing before streaming
+        for attempt in range(max_retries + 1):
+            result: BaseMessageChunk | None = None
+            console.print()
+            try:
+                with Live(console=console, refresh_per_second=10) as live:
+                    async for chunk in self.llm.astream(messages):
+                        if result is None:
+                            result = chunk
+                        else:
+                            result += chunk
 
-        with Live(console=console, refresh_per_second=10) as live:
-            async for chunk in self.llm.astream(messages):
-                if result is None:
-                    result = chunk
-                else:
-                    result += chunk
-
-                panel = self._create_response_panel(result, panel_title, border_style, max_lines)
-                live.update(panel)
-
-        return result
+                        panel = self._create_response_panel(result, panel_title, border_style, max_lines)
+                        live.update(panel)
+                return result
+            except Exception as e:  # noqa: BLE001
+                message = str(e).lower()
+                overloaded = (
+                    "overloaded" in message
+                    or "rate limit" in message
+                    or "response not read" in message and "stream" in message
+                )
+                if overloaded and attempt < max_retries:
+                    delay = base_delay_s * (2 ** attempt) + random.uniform(0, 0.5)
+                    console.print(
+                        Panel(
+                            f"Model overloaded. Retrying in {delay:.1f}s (attempt {attempt + 1} of {max_retries})",
+                            title="⏳ Retry",
+                            title_align="left",
+                            border_style="yellow",
+                            highlight=True,
+                        )
+                    )
+                    await asyncio.sleep(delay)
+                    continue
+                raise
+        return None
 
     @staticmethod
     def _process_message(message: BaseMessageChunk, max_lines: int | None = None) -> RenderableType | None:
@@ -193,14 +219,14 @@ class Agent:
             except Exception as e:  # noqa: BLE001
                 console.print(
                     Panel(
-                        f"❌ Error running tool {tool_name}: {e}",
+                        f"❌ Error running tool: {e}",
                         title="❌ Tool Error",
                         title_align="left",
                         border_style="red",
                         highlight=True,
                     )
                 )
-                self.state.add_message(AIMessage(content=f"Error running tool {tool_name}: {e}"))
+                self.state.add_message(AIMessage(content=f"Error running tool: {e}"))
             else:
                 console.print(
                     Panel(

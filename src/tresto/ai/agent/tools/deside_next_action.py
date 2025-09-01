@@ -27,13 +27,14 @@ async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
     if state.current_recording_code is not None:
         available_actions.remove(Decision.RECORD_USER_INPUT)
 
-    agent = state.create_agent(
-        f"""\
-            You are required to decide the next action to take in a test.
-            Available actions are: {" ".join(f"- {action.value}" for action in available_actions)}
-            Respond with the decision and the reason.
-        """
-    )
+    actions = "\n".join(f"- {action.value} ({action.description})" for action in available_actions)
+    prompt = """\
+        You are required to decide the next action to take in a test.
+        Available actions are: {actions}
+        Respond with the decision and the reason.
+    """
+
+    agent = state.create_agent(prompt.format(actions=actions))
 
     result = await agent.structured_response(DecisionResponse)
 
