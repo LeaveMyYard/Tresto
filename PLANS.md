@@ -40,4 +40,24 @@ Re-evaluate the idea
   - Screenshots right after the action is performed (sometimes a delay between the action and completing removes some information, like notifications)
 
 ## State: 
+DONE ✅
+
+
+# Note 5:
+- It should be better to change "timestamp" to "time" in the recording, making it relative to the start of the recording
+
+## State:
 IN PROGRESS 🚧
+
+
+# Note 6:
+- Add "Human in the loop" feature, persist all user inputs in the docstring 
+
+
+# Note 7:
+- When working with harder tests, sometimes the model starts to break some previous code, when iterating on fixing the new code.
+  - Make it split the big test into multiple smaller tests (for example by groupping stems in some functions)
+  - Make it define and iteratively update the todo list, so it better understands
+
+# Note 8:
+- Add ability to prompt for some actions after a test creation is finished (for example, remove magic literal "australia" and allow any country to be found in the field)

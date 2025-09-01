@@ -108,11 +108,15 @@ class TestAgentState(BaseModel):
         return TestDatabase(test_directory=self.config.project.test_directory, test_name=self.test_name)
 
     def create_llm(self: TestAgentState, tools: list[Tool] | None = None) -> BaseChatModel:
+        # Make it possible to pass custom options to the LLM
+        options = self.config.ai.options or {}
+
         return init_chat_model(
             f"{self.config.ai.connector}:{self.config.ai.model}",
             max_tokens=self.config.ai.max_tokens,
             temperature=self.config.ai.temperature,
             max_retries=3,
+            **options,
         ).bind_tools(tools or [])
 
     @property

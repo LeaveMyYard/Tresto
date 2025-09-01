@@ -142,8 +142,10 @@ class Agent:
                 elif isinstance(item, dict):
                     if item.get("type") == "tool_call":
                         content.append(f"Tool call: {item.get('name', '')} with args: {item.get('args', '')}")
-                    elif "text" in item:
-                        content.append(item.get("text", ""))
+                    elif text := item.get("text"):
+                        content.append(text)
+                    elif thinking := item.get("thinking"):
+                        content.append(f'<span style="color: gray;">{thinking}</span>')
             content_text = "\n".join(content)
 
         # Apply line limiting if specified
@@ -224,6 +226,7 @@ class Agent:
                         title_align="left",
                         border_style="red",
                         highlight=True,
+                        expand=True,
                     )
                 )
                 self.state.add_message(ToolMessage(content=f"Error running tool: {e}", tool_call_id=tool_call.get("id", "")))
@@ -235,5 +238,6 @@ class Agent:
                         title_align="left",
                         border_style="green",
                         highlight=True,
+                        expand=True,
                     )
                 )

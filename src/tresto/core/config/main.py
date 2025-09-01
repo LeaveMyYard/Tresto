@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Self
+from typing import Any, Self
 
 import typer
 import yaml
@@ -45,6 +45,7 @@ class AIConfig(BaseModel):
     max_iterations: int | None = None
     temperature: float | None = None
     max_tokens: int = 16384
+    options: dict[str, Any] | None = None
 
 
 class RecordingConfig(BaseModel):

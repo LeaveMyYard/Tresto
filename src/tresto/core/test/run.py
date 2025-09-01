@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import time
 from contextlib import redirect_stderr, redirect_stdout
+from tempfile import NamedTemporaryFile
 from datetime import UTC, datetime
 from traceback import format_exc
 from typing import TYPE_CHECKING
@@ -62,10 +63,11 @@ async def run_test(test_path: Path) -> TestRunResult:
                     html = await page.content()
                     img = await screenshot_page(page, "png")
                     img.save("screenshot.png")
-                    await context.tracing.stop(path="trace.zip")
-                    from pathlib import Path as _Path
+                    with NamedTemporaryFile(prefix="tresto-trace-", suffix=".zip", delete=False) as tmp:
+                        await context.tracing.stop(path=tmp.name)
+                        from pathlib import Path as _Path
 
-                    trace_path = _Path("trace.zip")
+                        trace_path = _Path(tmp.name)
                     await browser.close()
     except Exception:  # noqa: BLE001
         # Catch any outer exceptions (e.g., playwright setup failures)
