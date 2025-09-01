@@ -298,10 +298,25 @@ class RecordingManager:
                     tag = head.lower()
                     attrs: dict[str, object] = {}
                     children: list[object] = []
+                    # Optional attrs in second position
+                    idx_after_attrs = 1
                     if len(node) > 1 and isinstance(node[1], dict):
                         attrs = node[1]  # type: ignore[assignment]
-                    if len(node) > 2 and isinstance(node[2], list):
-                        children = node[2]
+                        idx_after_attrs = 2
+                    # Children may be represented either as a single list at position 2,
+                    # or as a sequence of child nodes spread across positions >= 2.
+                    if len(node) > idx_after_attrs:
+                        maybe_children = node[idx_after_attrs]
+                        if (
+                            isinstance(maybe_children, list)
+                            and not (maybe_children and isinstance(maybe_children[0], str) and maybe_children[0].lower() in {"html", "head", "body", "div", "span", "style", "script"})
+                            and len(node) == idx_after_attrs + 1
+                        ):
+                            # Likely a dedicated children list container
+                            children = maybe_children
+                        else:
+                            # Treat everything from idx_after_attrs onward as children
+                            children = list(node[idx_after_attrs:])
                     # serialize attributes
                     attr_str = "".join(
                         f' {k}="{str(v)}"' for k, v in attrs.items()

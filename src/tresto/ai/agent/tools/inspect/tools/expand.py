@@ -10,6 +10,7 @@ from tresto.ai.agent.tools.inspect.tools.core import (
     format_element_collapsed,
     trim_content,
 )
+from tresto.utils.repetition import collapse_repeated_blocks, collapse_repeated_lines
 
 
 class ExpandArgs(BaseModel):
@@ -51,6 +52,9 @@ def create_bound_expand_tool(manager: RecordingManager) -> Tool:
             )
 
         view = format_element_collapsed(element, 0, max_depth=depth)
+        # Collapse extremely repetitive lines/blocks to avoid drowning the model
+        view = collapse_repeated_blocks(view, block_tokens={"📂 <style>", "📜 \"HEAD\"", "📂 <script>"}, min_repeat=10)
+        view = collapse_repeated_lines(view, min_repeat=20)
         trimmed_view = trim_content(view, MAX_VIEW_LENGTH)
         return (
             f"📂 Expanded view of '{selector}' ({depth} levels):\n\n{trimmed_view}\n"
