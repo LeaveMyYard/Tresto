@@ -12,7 +12,7 @@ tresto.secrets["SOME_SECRET"]
 tresto.config.url # The URL of the website to test, use together with "await page.goto(tresto.config.url)"
 ```
 
-Available secrets: {AVAILABLE_SECRETS}
+Available secrets: {available_secrets}
 
 You will be running in a loop and will be able to select actions to take. 
 Do not finish until you have verified that the test is working or if you think that you are not able to finish it.

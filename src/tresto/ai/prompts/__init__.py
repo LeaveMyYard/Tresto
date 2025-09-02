@@ -11,8 +11,8 @@ def load_prompt(name: str) -> str:
         return f.read()
 
 
-def main(available_secrets: Sequence[str]) -> str:
-    return load_prompt("main").format(available_secrets=", ".join(available_secrets))
+def system(available_secrets: Sequence[str]) -> str:
+    return load_prompt("system").format(available_secrets=", ".join(available_secrets))
 
 
 def codegen(current_recording_code: str) -> str:

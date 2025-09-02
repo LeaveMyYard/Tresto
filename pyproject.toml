@@ -3,15 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "tresto"
-dynamic = ["version"]
+name = "tresto-ai"
+version = "0.2.0"
 description = "AI-powered E2E testing CLI inspired by Playwright codegen"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.13"
-authors = [
-    { name = "LeaveMyYard", email = "zhukovpavel2001@gmail.com" },
-]
+authors = [{ name = "LeaveMyYard", email = "zhukovpavel2001@gmail.com" }]
 keywords = ["testing", "e2e", "ai", "playwright", "automation"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -33,7 +31,6 @@ dependencies = [
     "pydantic>=2.0.0",
     "rich>=13.0.0",
     "toml>=0.10.2",
-    "jinja2>=3.1.0",
     "pathspec>=0.11.0",
     "langchain>=0.1.0",
     "langchain-anthropic>=0.1.0",
@@ -98,9 +95,9 @@ select = [
     "BLE",   # flake8-blind-except
 ]
 ignore = [
-    "E501",  # line too long, handled by ruff format
-    "B008",  # do not perform function calls in argument defaults
-    "C901",  # too complex
+    "E501", # line too long, handled by ruff format
+    "B008", # do not perform function calls in argument defaults
+    "C901", # too complex
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -119,10 +116,16 @@ warn_unused_ignores = true
 warn_return_any = true
 strict_equality = true
 
-[tool.flake8]
-type-checking-pydantic-enabled = true
-type-checking-fastapi-enabled = true
-type-checking-fastapi-dependency-support-enabled = true
+[tool.ruff.lint.flake8-type-checking]
+# Add any bases whose annotations must be available at runtime:
+runtime-evaluated-base-classes = ["pydantic.BaseModel"]
+# Add decorators (e.g., FastAPI Depends) that require runtime evaluation:
+runtime-evaluated-decorators = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Path",
+    "fastapi.Body",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -132,8 +135,4 @@ python_functions = ["test_*"]
 addopts = "-v --tb=short"
 
 [dependency-groups]
-dev = [
-    "mypy>=1.17.1",
-    "ruff>=0.12.7",
-    "types-toml>=0.10.8.20240310",
-]
+dev = ["mypy>=1.17.1", "ruff>=0.12.7", "types-toml>=0.10.8.20240310"]

@@ -1,2 +1,7 @@
 .recordings/*
 .database/*
+
+# Files that could be created by Tresto for debugging
+debug.txt
+state.yaml
+screenshot.png

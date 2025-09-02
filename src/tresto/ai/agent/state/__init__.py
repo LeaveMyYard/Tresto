@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from enum import StrEnum
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import yaml
@@ -10,20 +11,17 @@ from langchain_core.messages import BaseMessage, HumanMessage
 from pydantic import BaseModel, ConfigDict
 
 from tresto import __version__
-from tresto.ai import prompts
 from tresto.ai.agent.agent import Agent
+from tresto.core.config.main import TrestoConfig
 from tresto.core.database import TestDatabase
 from tresto.core.file_header import FileHeader, TrestoFileHeaderCorrupted
+from tresto.core.test import TestRunResult
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from pathlib import Path
 
     from langchain.chat_models.base import BaseChatModel
     from langchain_core.tools import Tool
-
-    from tresto.core.config.main import TrestoConfig
-    from tresto.core.test import TestRunResult
 
 
 class Decision(StrEnum):
@@ -91,7 +89,7 @@ class TestAgentState(BaseModel):
         )
 
     def add_message(self, message: BaseMessage | dict) -> None:
-        with open("debug.txt", "a") as f:
+        with open(self.config.project.test_directory / "debug.txt", "a") as f:
             f.write(f"{message}\n")
 
         if not isinstance(message, dict) and not message.content:

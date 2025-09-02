@@ -47,7 +47,7 @@ class Agent:
     @property
     def total_messages(self) -> list[BaseMessage]:
         return (
-            [SystemMessage(prompts.main(self.state.config.secrets.keys()))]
+            [SystemMessage(prompts.system(self.state.config.secrets.keys()))]
             + self.state.messages
             + [HumanMessage("== NEW TASK ==\n" + self.task_message)]
         )
