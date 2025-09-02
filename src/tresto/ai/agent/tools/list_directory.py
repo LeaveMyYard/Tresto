@@ -188,7 +188,7 @@ async def list_directory(state: TestAgentState) -> TestAgentState:
         )
         console.print(error_panel)
         result_message = f"Error: Permission denied accessing directory '{dir_path}'."
-    except Exception as e:  # ignore: BLE-001
+    except Exception as e:  # noqa: BLE001
         error_panel = Panel(
             f"Error listing directory '{dir_path}': {e}",
             title="❌ Unexpected Error",

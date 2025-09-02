@@ -1,29 +1,29 @@
 from __future__ import annotations
 
-import textwrap
 from contextlib import contextmanager
 from enum import StrEnum
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import yaml
 from langchain.chat_models import init_chat_model
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from langchain_core.tools import Tool
+from langchain_core.messages import BaseMessage, HumanMessage
 from pydantic import BaseModel, ConfigDict
 
 from tresto import __version__
 from tresto.ai import prompts
 from tresto.ai.agent.agent import Agent
-from tresto.core.config.main import TrestoConfig
 from tresto.core.database import TestDatabase
 from tresto.core.file_header import FileHeader, TrestoFileHeaderCorrupted
-from tresto.core.test import TestRunResult
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+    from pathlib import Path
 
     from langchain.chat_models.base import BaseChatModel
+    from langchain_core.tools import Tool
+
+    from tresto.core.config.main import TrestoConfig
+    from tresto.core.test import TestRunResult
 
 
 class Decision(StrEnum):
@@ -82,11 +82,11 @@ class TestAgentState(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def create_agent(self, system_message: str, tools: list[Tool] | None = None) -> Agent:
+    def create_agent(self, task_message: str, tools: list[Tool] | None = None) -> Agent:
         return Agent(
             state=self,
             llm=self.create_llm(tools=tools),
-            system_message=SystemMessage(content=textwrap.dedent(system_message)),
+            task_message=task_message,
             tools={tool.name: tool for tool in tools or []},
         )
 
@@ -99,7 +99,7 @@ class TestAgentState(BaseModel):
 
         self.messages.append(message)
 
-        with open("state.yaml", "w") as f:
+        with open(self.config.project.test_directory / "state.yaml", "w") as f:
             yaml.dump(self.model_dump(mode="json", exclude=["last_run_result"]), f, indent=2)
 
     @property

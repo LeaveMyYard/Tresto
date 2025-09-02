@@ -79,5 +79,4 @@ class BrowserRecorder:
         if not succeeded:
             raise RuntimeError(f"Failed to record browser interaction: {last_error}")
 
-        with open(output_abs_path) as f:
-            return f.read()
+        return Path(output_abs_path).read_text()

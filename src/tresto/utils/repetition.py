@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from typing import Iterable
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 def collapse_repeated_lines(text: str, min_repeat: int = 5) -> str:
@@ -74,5 +77,3 @@ def collapse_repeated_blocks(text: str, block_tokens: Iterable[str], min_repeat:
         out.append(line)
         idx += 1
     return "\n".join(out)
-
-

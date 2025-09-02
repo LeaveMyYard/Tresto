@@ -9,7 +9,7 @@ from tresto.core.config.main import AIConfig, BrowserConfig, ProjectConfig, Tres
 def create_test_config() -> TrestoConfig:
     """Create a test configuration with all required fields."""
     return TrestoConfig(
-        project=ProjectConfig(name="test_project", base_url="https://example.com", test_directory="tests"),
+        project=ProjectConfig(name="test_project", url="https://example.com", test_directory="tests"),
         ai=AIConfig(connector="anthropic", model="claude-3-sonnet-20240229", temperature=0.7),
         browser=BrowserConfig.default(),
     )
@@ -58,7 +58,7 @@ class TestTestAgentStateWithPlaywrightIterate:
     def test_agent_state_creation(self) -> None:
         """Test that agent state can be created with all required fields."""
         config = create_test_config()
-        config.project.base_url = "https://example.com"
+        config.project.url = "https://example.com"
 
         state = TestAgentState(
             test_name="test_playwright_iterate",
@@ -70,7 +70,7 @@ class TestTestAgentStateWithPlaywrightIterate:
 
         assert state.test_name == "test_playwright_iterate"
         assert state.test_instructions == "Test the playwright iteration functionality"
-        assert state.config.project.base_url == "https://example.com"
+        assert state.config.project.url == "https://example.com"
         assert state.last_decision is None
         assert len(state.messages) >= 1  # Should have main prompt
 

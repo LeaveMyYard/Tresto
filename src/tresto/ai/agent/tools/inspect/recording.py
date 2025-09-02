@@ -8,11 +8,12 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from bs4 import BeautifulSoup
-from PIL.Image import Image
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from pathlib import Path
+
+    from PIL.Image import Image
 
 
 @dataclass
@@ -80,7 +81,6 @@ class RecordingManager:
             f"Screenshots: {stats['num_screenshots']}\n"
             f"Logs: {stats['num_logs']}"
         )
-
 
     # --- Trace loading ---
     def _load_sources_from_trace(self, trace_path: Path) -> RecordingSources:
@@ -180,11 +180,7 @@ class RecordingManager:
 
                     # 2) ev.get("data", {}).get("snapshot", {}).get("html")
                     data = ev.get("data")
-                    if (
-                        isinstance(data, dict)
-                        and isinstance(data.get("snapshot"), dict)
-                        and ts is not None
-                    ):
+                    if isinstance(data, dict) and isinstance(data.get("snapshot"), dict) and ts is not None:
                         html_val = data["snapshot"].get("html")
                         html_str = self._html_value_to_string(html_val)
                         if html_str is not None:
@@ -193,11 +189,7 @@ class RecordingManager:
 
                     # 3) "after" events for Frame.content often have result.value with full HTML string
                     result_obj = ev.get("result")
-                    if (
-                        isinstance(result_obj, dict)
-                        and isinstance(result_obj.get("value"), str)
-                        and ts is not None
-                    ):
+                    if isinstance(result_obj, dict) and isinstance(result_obj.get("value"), str) and ts is not None:
                         val = result_obj["value"]
                         # Heuristic: looks like HTML content
                         if "<html" in val or "<body" in val or val.strip().startswith("<"):
@@ -237,10 +229,16 @@ class RecordingManager:
                             or (isinstance(ev_event, str) and "console" in ev_event.lower())
                             or (isinstance(ev_name, str) and "console" in ev_name.lower())
                         ):
-                            level = (ev.get("level") or (data or {}).get("type") or "log") if isinstance(data, dict) else (ev.get("level") or "log")
+                            level = (
+                                (ev.get("level") or (data or {}).get("type") or "log")
+                                if isinstance(data, dict)
+                                else (ev.get("level") or "log")
+                            )
                             msg = (
-                                (data or {}).get("text") if isinstance(data, dict) else None
-                            ) or ev.get("text") or ev.get("message")
+                                ((data or {}).get("text") if isinstance(data, dict) else None)
+                                or ev.get("text")
+                                or ev.get("message")
+                            )
 
                         # Page errors
                         if msg is None and (
@@ -309,7 +307,12 @@ class RecordingManager:
                         maybe_children = node[idx_after_attrs]
                         if (
                             isinstance(maybe_children, list)
-                            and not (maybe_children and isinstance(maybe_children[0], str) and maybe_children[0].lower() in {"html", "head", "body", "div", "span", "style", "script"})
+                            and not (
+                                maybe_children
+                                and isinstance(maybe_children[0], str)
+                                and maybe_children[0].lower()
+                                in {"html", "head", "body", "div", "span", "style", "script"}
+                            )
                             and len(node) == idx_after_attrs + 1
                         ):
                             # Likely a dedicated children list container
@@ -318,9 +321,7 @@ class RecordingManager:
                             # Treat everything from idx_after_attrs onward as children
                             children = list(node[idx_after_attrs:])
                     # serialize attributes
-                    attr_str = "".join(
-                        f' {k}="{str(v)}"' for k, v in attrs.items()
-                    )
+                    attr_str = "".join(f' {k}="{str(v)}"' for k, v in attrs.items())
                     inner = "".join(render(child) for child in children)
                     return f"<{tag}{attr_str}>{inner}</{tag}>"
                 # Otherwise, it's a list of nodes
@@ -366,6 +367,7 @@ class RecordingManager:
         if ts in snaps:
             return snaps[ts]
         if snaps:
+
             def keyfunc(t: datetime) -> tuple[float, int]:
                 return (abs((t - ts).total_seconds()), 0 if t <= ts else 1)
 
@@ -385,6 +387,7 @@ class RecordingManager:
         if ts in shots:
             return shots[ts]
         if shots:
+
             def keyfunc(t: datetime) -> tuple[float, int]:
                 return (abs((t - ts).total_seconds()), 0 if t <= ts else 1)
 
@@ -411,11 +414,7 @@ class RecordingManager:
         end = end_default if end_time is None else end_time
         if start_time > end:
             return []
-        return [
-            (ts, text)
-            for ts, text in self._sources.logs
-            if start_time <= ts <= end
-        ]
+        return [(ts, text) for ts, text in self._sources.logs if start_time <= ts <= end]
 
     # Snapshot accessors
     def __getitem__(self, timestamp: datetime | None) -> RecordingSnapshot:
@@ -437,6 +436,3 @@ class RecordingSnapshot:
     @property
     def screenshot(self) -> Image:
         return self.manager.get_screenshot_at(self.timestamp_s)
-
-
-

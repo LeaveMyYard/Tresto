@@ -167,7 +167,7 @@ async def read_file_content(state: TestAgentState) -> TestAgentState:
         )
         console.print(error_panel)
         result_message = f"Error: File '{file_path}' is not a text file or uses an unsupported encoding."
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         error_panel = Panel(
             f"Error reading file '{file_path}': {e}",
             title="❌ Unexpected Error",

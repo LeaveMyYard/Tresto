@@ -42,14 +42,14 @@ def run_tests_command() -> None:
 
     # Prefer Python API to avoid external dependency on executables
     raise NotImplementedError("Not implemented")
-    code = _run_via_pytest_module(target)
-    if code is None:
-        code = _run_via_executable(target)
+    # code = _run_via_pytest_module(target)
+    # if code is None:
+    #     code = _run_via_executable(target)
 
-    if code is None:
-        console.print("[red]pytest is not available.[/red]")
-        console.print("Install it or run via uv: [bold]uv run pytest[/bold]")
-        raise typer.Exit(1)
+    # if code is None:
+    #     console.print("[red]pytest is not available.[/red]")
+    #     console.print("Install it or run via uv: [bold]uv run pytest[/bold]")
+    #     raise typer.Exit(1)
 
-    # Exit with pytest's return code
-    raise typer.Exit(code)
+    # # Exit with pytest's return code
+    # raise typer.Exit(code)

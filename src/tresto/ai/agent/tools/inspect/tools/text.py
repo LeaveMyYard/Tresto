@@ -3,12 +3,12 @@ from datetime import datetime
 from langchain.tools import Tool, tool
 from pydantic import BaseModel, Field
 
+from tresto.ai.agent.tools.inspect.recording import RecordingManager
 from tresto.ai.agent.tools.inspect.tools.core import (
     MAX_FULL_TEXT_LENGTH,
     find_element_by_css_selector,
     trim_content,
 )
-from tresto.ai.agent.tools.inspect.recording import RecordingManager
 
 
 class TextArgs(BaseModel):

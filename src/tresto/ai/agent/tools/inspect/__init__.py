@@ -40,7 +40,7 @@ async def inspect_html_tool(state: TestAgentState) -> TestAgentState:
 
     manager = state.last_run_result.recording
     agent = state.create_agent(
-        system_message="""You are exploring HTML content from a web page recording. Use tools to explore the HTML and screenshots at specific timestamps.""",
+        """You are exploring HTML content from a web page recording. Use tools to explore the HTML and screenshots at specific timestamps.""",
         tools=create_bound_tools(manager),
     )
 

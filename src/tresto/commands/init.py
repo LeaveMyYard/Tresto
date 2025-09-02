@@ -63,7 +63,7 @@ async def _init_command(force: bool, template: str) -> None:
     config = TrestoConfig(
         project=ProjectConfig(
             name=project_name,
-            base_url=base_url,
+            url=base_url,
             test_directory=test_directory,
         ),
         ai=AIConfig(

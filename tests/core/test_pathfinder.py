@@ -15,7 +15,7 @@ class TestTrestoPathFinder:
     def sample_config(self) -> TrestoConfig:
         """Create a sample TrestoConfig for testing."""
         return TrestoConfig(
-            project=ProjectConfig(name="test_project", base_url="https://example.com", test_directory="tests"),
+            project=ProjectConfig(name="test_project", url="https://example.com", test_directory="tests"),
             ai=AIConfig(connector="anthropic", model="claude-3-sonnet"),
         )
 
@@ -138,7 +138,7 @@ class TestTrestoPathFinder:
     def test_different_test_directory(self) -> None:
         """Test pathfinder with different test directory."""
         config = TrestoConfig(
-            project=ProjectConfig(name="test_project", base_url="https://example.com", test_directory="my_tests"),
+            project=ProjectConfig(name="test_project", url="https://example.com", test_directory="my_tests"),
             ai=AIConfig(connector="anthropic", model="claude-3-sonnet"),
         )
 

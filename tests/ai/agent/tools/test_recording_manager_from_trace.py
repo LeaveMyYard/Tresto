@@ -43,5 +43,3 @@ def test_load_recording_from_trace_zip() -> None:
     except ValueError:
         # Fallback to end timestamp if mid has no screenshot
         _ = manager.get_screenshot_at(end)
-
-

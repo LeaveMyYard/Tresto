@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from langchain.tools import Tool, tool
 from pydantic import BaseModel, Field
 
-from tresto.ai.agent.tools.inspect.recording import RecordingManager
+if TYPE_CHECKING:
+    from tresto.ai.agent.tools.inspect.recording import RecordingManager
 
 
 class LogsArgs(BaseModel):
@@ -37,12 +39,8 @@ def create_bound_logs_tool(manager: RecordingManager) -> Tool:
         if not entries:
             return "📝 No logs in the specified time range"
 
-        lines = [
-            f"{ts.isoformat()} — {text}" for ts, text in sorted(entries, key=lambda x: x[0])
-        ]
-        
+        lines = [f"{ts.isoformat()} — {text}" for ts, text in sorted(entries, key=lambda x: x[0])]
+
         return "\n".join(lines[:500])  # guard overly long output
 
     return logs
-
-

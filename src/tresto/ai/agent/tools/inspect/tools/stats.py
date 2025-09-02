@@ -10,5 +10,3 @@ def create_bound_stats_tool(manager: RecordingManager) -> Tool:
         return manager.to_text()
 
     return recording_stats
-
-

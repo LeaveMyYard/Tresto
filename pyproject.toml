@@ -10,7 +10,7 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.13"
 authors = [
-    { name = "LeaveMyYard", email = "your-email@example.com" },
+    { name = "LeaveMyYard", email = "zhukovpavel2001@gmail.com" },
 ]
 keywords = ["testing", "e2e", "ai", "playwright", "automation"]
 classifiers = [
@@ -101,7 +101,6 @@ ignore = [
     "E501",  # line too long, handled by ruff format
     "B008",  # do not perform function calls in argument defaults
     "C901",  # too complex
-    "TC002", # Move imports into TYPE_CHECKING block. Does not work good with pydantic
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -119,6 +118,11 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 warn_return_any = true
 strict_equality = true
+
+[tool.flake8]
+type-checking-pydantic-enabled = true
+type-checking-fastapi-enabled = true
+type-checking-fastapi-dependency-support-enabled = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

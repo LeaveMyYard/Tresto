@@ -13,14 +13,13 @@ from pydantic import BaseModel
 class TestDatabase(BaseModel):
     """Manages persistent storage for test-related information."""
 
-    test_directory: str  # From config.project.test_directory
+    test_directory: Path
     test_name: str
 
     @property
     def database_dir(self) -> Path:
         """Get the database directory path."""
-        test_dir = Path(self.test_directory)
-        return test_dir / ".database"
+        return self.test_directory / ".database"
 
     @property
     def test_hash(self) -> str:

@@ -1,10 +1,8 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Any
-from datetime import datetime, timezone
 
-import pytest
-from bs4 import BeautifulSoup
 from PIL import Image
 
 from tresto.ai.agent.tools.inspect.recording import RecordingManager, RecordingSources
@@ -32,7 +30,7 @@ def _manager() -> RecordingManager:
       </div>
     </body></html>
     """
-    t0 = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+    t0 = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
     t1 = t0.replace(second=1, microsecond=500_000)
     t2 = t0.replace(second=2)
     sources = RecordingSources(
@@ -58,7 +56,7 @@ def test_stats_tool() -> None:
 def test_screenshot_tool_at_time() -> None:
     manager = _manager()
     tools = _tool_dict(manager)
-    ts = datetime(2024, 1, 1, 12, 0, 0, 400_000, tzinfo=timezone.utc)
+    ts = datetime(2024, 1, 1, 12, 0, 0, 400_000, tzinfo=UTC)
     out = tools["screenshot"].invoke({"timestamp": ts})
     assert "Screenshot available" in out
 
@@ -66,7 +64,7 @@ def test_screenshot_tool_at_time() -> None:
 def test_show_with_timestamp() -> None:
     manager = _manager()
     tools = _tool_dict(manager)
-    ts = datetime(2024, 1, 1, 12, 0, 0, 200_000, tzinfo=timezone.utc)
+    ts = datetime(2024, 1, 1, 12, 0, 0, 200_000, tzinfo=UTC)
     out = tools["show"].invoke({"depth": 2, "timestamp": ts})
     assert "html" in out.lower()
 
@@ -74,7 +72,7 @@ def test_show_with_timestamp() -> None:
 def test_expand_with_timestamp_and_selector() -> None:
     manager = _manager()
     tools = _tool_dict(manager)
-    ts = datetime(2024, 1, 1, 12, 0, 1, 600_000, tzinfo=timezone.utc)
+    ts = datetime(2024, 1, 1, 12, 0, 1, 600_000, tzinfo=UTC)
     out = tools["expand"].invoke({"selector": "#root", "depth": 2, "timestamp": ts})
     assert "Expanded view" in out
 
@@ -82,7 +80,7 @@ def test_expand_with_timestamp_and_selector() -> None:
 def test_attrs_with_timestamp() -> None:
     manager = _manager()
     tools = _tool_dict(manager)
-    ts = datetime(2024, 1, 1, 12, 0, 0, 200_000, tzinfo=timezone.utc)
+    ts = datetime(2024, 1, 1, 12, 0, 0, 200_000, tzinfo=UTC)
     out = tools["attrs"].invoke({"selector": "h1.title", "timestamp": ts})
     assert "Attributes" in out
 
@@ -90,7 +88,7 @@ def test_attrs_with_timestamp() -> None:
 def test_text_with_timestamp() -> None:
     manager = _manager()
     tools = _tool_dict(manager)
-    ts = datetime(2024, 1, 1, 12, 0, 1, 500_000, tzinfo=timezone.utc)
+    ts = datetime(2024, 1, 1, 12, 0, 1, 500_000, tzinfo=UTC)
     out = tools["text"].invoke({"selector": "button#go", "timestamp": ts})
     assert "Text content" in out
 
@@ -98,18 +96,16 @@ def test_text_with_timestamp() -> None:
 def test_timestamp_out_of_range_error() -> None:
     manager = _manager()
     tools = _tool_dict(manager)
-    ts = datetime(2024, 1, 1, 12, 0, 5, tzinfo=timezone.utc)
+    ts = datetime(2024, 1, 1, 12, 0, 5, tzinfo=UTC)
     out = tools["text"].invoke({"selector": "button#go", "timestamp": ts})
     assert out.startswith("❌")
 
 
 def test_snapshot_indexing_returns_unified_point() -> None:
     manager = _manager()
-    snap = manager[datetime(2024, 1, 1, 12, 0, 1, tzinfo=timezone.utc)]
+    snap = manager[datetime(2024, 1, 1, 12, 0, 1, tzinfo=UTC)]
     # soup access should work
     assert "Hello World" in snap.soup.get_text()
     # screenshot access should work
     img = snap.screenshot
     assert img.width == 20 and img.height == 10
-
-

@@ -61,3 +61,21 @@ IN PROGRESS 🚧
 
 # Note 8:
 - Add ability to prompt for some actions after a test creation is finished (for example, remove magic literal "australia" and allow any country to be found in the field)
+
+
+# Note 9:
+- We need to make model to impor tresto and use something like 
+
+```python
+import tresto
+from playwright.async_api import Page, expect
+
+async def test_campaigns_error_missing_config(page: Page):
+    await page.goto(tresto.config.url)
+```
+
+And then make it possible to store secrets using 
+
+```python
+tresto.secrets["api_key"] = "1234567890"
+```

@@ -30,7 +30,7 @@ def create_bound_show_tool(manager: RecordingManager) -> Tool:
 
         view = generate_collapsed_html_view(soup, max_depth=depth)
         # Collapse extremely repetitive lines/blocks to avoid drowning the model
-        view = collapse_repeated_blocks(view, block_tokens={"📂 <style>", "📜 \"HEAD\"", "📂 <script>"}, min_repeat=10)
+        view = collapse_repeated_blocks(view, block_tokens={"📂 <style>", '📜 "HEAD"', "📂 <script>"}, min_repeat=10)
         return collapse_repeated_lines(view, min_repeat=20)
 
     return show

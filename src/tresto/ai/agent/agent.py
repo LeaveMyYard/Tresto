@@ -5,16 +5,19 @@ import random
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from langchain.chat_models.base import BaseChatModel
-from langchain_core.messages import AIMessage, BaseMessage, BaseMessageChunk, SystemMessage, ToolMessage
-from langchain_core.tools import BaseTool
+from langchain_core.messages import AIMessage, BaseMessage, BaseMessageChunk, HumanMessage, SystemMessage, ToolMessage
 from pydantic import BaseModel
 from rich.console import Console, RenderableType
 from rich.live import Live
 from rich.markdown import Markdown
 from rich.panel import Panel
 
+from tresto.ai import prompts
+
 if TYPE_CHECKING:
+    from langchain.chat_models.base import BaseChatModel
+    from langchain_core.tools import BaseTool
+
     from tresto.ai.agent.state import TestAgentState
 
 console = Console()
@@ -38,12 +41,16 @@ def _get_last_n_lines(text: str, max_lines: int) -> str:
 class Agent:
     state: TestAgentState
     llm: BaseChatModel
-    system_message: SystemMessage
+    task_message: str
     tools: dict[str, BaseTool]
 
     @property
     def total_messages(self) -> list[BaseMessage]:
-        return [self.system_message] + self.state.messages
+        return (
+            [SystemMessage(prompts.main(self.state.config.secrets.keys()))]
+            + self.state.messages
+            + [HumanMessage("== NEW TASK ==\n" + self.task_message)]
+        )
 
     async def structured_response[T: BaseModel](
         self,
@@ -109,10 +116,11 @@ class Agent:
                 overloaded = (
                     "overloaded" in message
                     or "rate limit" in message
-                    or "response not read" in message and "stream" in message
+                    or "response not read" in message
+                    and "stream" in message
                 )
                 if overloaded and attempt < max_retries:
-                    delay = base_delay_s * (2 ** attempt) + random.uniform(0, 0.5)
+                    delay = base_delay_s * (2**attempt) + random.uniform(0, 0.5)
                     console.print(
                         Panel(
                             f"Model overloaded. Retrying in {delay:.1f}s (attempt {attempt + 1} of {max_retries})",
@@ -229,7 +237,9 @@ class Agent:
                         expand=True,
                     )
                 )
-                self.state.add_message(ToolMessage(content=f"Error running tool: {e}", tool_call_id=tool_call.get("id", "")))
+                self.state.add_message(
+                    ToolMessage(content=f"Error running tool: {e}", tool_call_id=tool_call.get("id", ""))
+                )
             else:
                 console.print(
                     Panel(

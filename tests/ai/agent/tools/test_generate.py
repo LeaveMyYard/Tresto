@@ -232,14 +232,14 @@ async def test_example(page: Page):
     await page.get_by_role("combobox", name="Add Country").fill("austra")
     await page.get_by_role("option", name="Australia").click()
     await page.get_by_role"""
-        
+
         result = _strip_markdown_code_fences(text)
-        
+
         # Should extract the code even without closing ```
         assert "```python" not in result
         assert "from playwright.async_api import Page" in result
-        assert result.endswith('await page.get_by_role')
-        
+        assert result.endswith("await page.get_by_role")
+
     def test_incomplete_code_block_just_opening(self):
         """Test handling of just opening code fence."""
         text = """```python
@@ -247,9 +247,9 @@ from playwright.async_api import Page
 
 async def test_example(page: Page):
     await page.goto("https://example.com")"""
-        
+
         result = _strip_markdown_code_fences(text)
-        
+
         # Should extract the code even without closing ```
         assert "```python" not in result
         assert "from playwright.async_api import Page" in result
@@ -366,8 +366,7 @@ class TestGenerateOrUpdateCode:
     @pytest.fixture
     def mock_agent(self):
         """Create a mock agent."""
-        agent = AsyncMock()
-        return agent
+        return AsyncMock()
 
     @pytest.mark.asyncio
     async def test_successful_generation_first_attempt(self, mock_state, mock_agent):

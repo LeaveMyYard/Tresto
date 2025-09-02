@@ -23,7 +23,7 @@ class TestPlaywrightIterateIntegration:
     async def test_real_llm_integration(self) -> None:
         """Test with real LLM API (requires API key)."""
         config = TrestoConfig()
-        config.project.base_url = "https://example.com"
+        config.project.url = "https://example.com"
         config.browser.headless = True
 
         # Use a real API key if available
@@ -62,7 +62,7 @@ class TestPlaywrightIterateIntegration:
     async def test_mocked_full_cycle(self) -> None:
         """Test full cycle with mocked LLM responses but real playwright execution."""
         config = TrestoConfig()
-        config.project.base_url = (
+        config.project.url = (
             "data:text/html,<html><head><title>Test Page</title></head><body><h1>Hello World</h1></body></html>"
         )
         config.browser.headless = True
@@ -121,7 +121,7 @@ class TestPlaywrightIterateIntegration:
     async def test_error_handling_integration(self) -> None:
         """Test error handling in integration scenarios."""
         config = TrestoConfig()
-        config.project.base_url = "https://nonexistent-domain-12345.com"
+        config.project.url = "https://nonexistent-domain-12345.com"
         config.browser.headless = True
 
         state = TestAgentState(
@@ -170,7 +170,7 @@ class TestPlaywrightIterateIntegration:
     async def test_multiple_iterations_integration(self) -> None:
         """Test multiple iterations with different actions."""
         config = TrestoConfig()
-        config.project.base_url = "data:text/html,<html><head><title>Multi Test</title></head><body><button id='test-btn'>Click Me</button></body></html>"
+        config.project.url = "data:text/html,<html><head><title>Multi Test</title></head><body><button id='test-btn'>Click Me</button></body></html>"
         config.browser.headless = True
 
         state = TestAgentState(

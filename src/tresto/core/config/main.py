@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any, Self
 
 import typer
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from rich.console import Console
 
 console = Console()
@@ -69,8 +70,8 @@ class ProjectConfig(BaseModel):
     """Project configuration settings."""
 
     name: str
-    base_url: str
-    test_directory: str
+    url: str
+    test_directory: Path
 
 
 class TrestoConfig(BaseModel):
@@ -81,6 +82,29 @@ class TrestoConfig(BaseModel):
     browser: BrowserConfig | None = None
     recording: RecordingConfig | None = None
     verbose: bool = True  # Show detailed code generation by default
+    secrets: dict[str, str] = {}
+
+    @field_validator("secrets", mode="before")
+    def validate_secrets(cls, v: list[str]) -> dict[str, str]:
+        """
+        Secrets in tresto.yaml are stored as a list of strings.
+        Each one of them should be present in the environment variables.
+        This function will return a dictionary of the environment variables.
+        """
+
+        assert isinstance(v, list), "Secrets should be a list of strings"
+        assert all(isinstance(s, str) for s in v), "Secrets should be a list of strings"
+        assert all(len(s) > 0 for s in v), "Secrets names should not be empty"
+
+        if any(s not in os.environ for s in v):
+            console.print(
+                "[red]Error:[/red] Found missing secrets "
+                f"in the environment variables: {[s for s in v if s not in os.environ]}",
+            )
+            console.print("Either add them to the environment variables or remove them from the configuration file.")
+            raise ValueError("Some secrets are not present in the environment variables.")
+
+        return {s: os.environ[s] for s in v}
 
     @classmethod
     def get_config_path(cls) -> Path:

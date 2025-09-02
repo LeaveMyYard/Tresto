@@ -22,5 +22,3 @@ def create_bound_screenshot_tool(manager: RecordingManager) -> Tool:
         return f"📸 Screenshot available at size {img.width}x{img.height}"
 
     return screenshot
-
-

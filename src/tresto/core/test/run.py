@@ -3,8 +3,8 @@ from __future__ import annotations
 import io
 import time
 from contextlib import redirect_stderr, redirect_stdout
-from tempfile import NamedTemporaryFile
 from datetime import UTC, datetime
+from tempfile import NamedTemporaryFile
 from traceback import format_exc
 from typing import TYPE_CHECKING
 
@@ -35,7 +35,6 @@ async def run_test(test_path: Path) -> TestRunResult:
 
     success = False
     tb = None
-    html = None
     img = None
     start = time.perf_counter()
     start_dt = datetime.now(UTC)
@@ -60,7 +59,7 @@ async def run_test(test_path: Path) -> TestRunResult:
                     tb = format_exc(limit=20)
                 finally:
                     # Optional: capture a final screenshot artifact
-                    html = await page.content()
+                    await page.content()
                     img = await screenshot_page(page, "png")
                     img.save("screenshot.png")
                     with NamedTemporaryFile(prefix="tresto-trace-", suffix=".zip", delete=False) as tmp:

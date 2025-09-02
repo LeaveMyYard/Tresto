@@ -9,6 +9,8 @@ from pydantic import BaseModel, Field
 from rich.console import Console
 from rich.panel import Panel
 
+from tresto.ai import prompts
+
 if TYPE_CHECKING:
     from tresto.ai.agent.state import TestAgentState
 
@@ -77,27 +79,7 @@ async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
     """Generate or update test code using the agent's process method."""
 
     # Create agent for code generation
-    agent = state.create_agent(
-        """\
-            You are a test code generator. Generate valid Playwright test code in Python.
-            
-            CRITICAL: You MUST wrap your code in ```python code blocks. Do not include any explanatory text outside the code block.
-            
-            The code should be a valid Playwright test written in Python with this exact format:
-            - Import the Page type from playwright.async_api
-            - Define an async function called test_<descriptive_name> that takes one parameter: page: Page
-            - The function should contain the test logic using the page parameter
-            
-            Example format:
-            ```python
-            from playwright.async_api import Page
-            
-            async def test_login_flow(page: Page):
-                await page.goto("https://example.com")
-                # ... test logic here
-            ```
-        """
-    )
+    agent = state.create_agent(prompts.create_test(state.config.secrets))
 
     retry_count = 0
     last_error = ""
@@ -128,10 +110,7 @@ async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
         # Try to extract code from the response
         extracted_code = _strip_markdown_code_fences(response)
         if extracted_code is None:
-            last_error = (
-                "The code block format is not finished. "
-                "Valid code block format requires ```"
-            )
+            last_error = "The code block format is not finished. Valid code block format requires ```"
             console.print(
                 Panel(last_error, title="❌ Invalid Code Block", title_align="left", border_style="red", highlight=True)
             )
