@@ -7,7 +7,7 @@ from tresto.config import config, secrets
 console = Console()
 
 
-__version__ = "0.2.1"
+__version__ = "0.3.0"
 __author__ = "LeaveMyYard"
 __email__ = "zhukovpavel2001@gmail.com"
 
