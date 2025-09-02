@@ -9,7 +9,6 @@ from PIL.Image import Image
 
 from .models import TestRunResult
 from .run import run_test
-from .utils import resolve_tests_root
 
 if TYPE_CHECKING:
     from pathlib import Path

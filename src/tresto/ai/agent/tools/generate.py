@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
-from rich.console import Console
+from rich.console import Console, RenderableType
 from rich.panel import Panel
 
 from tresto.ai import prompts
@@ -74,6 +74,14 @@ class GenerateCodeDecision(BaseModel):
     wants_to_edit: bool = Field(description="Whether the model wants to make further edits to the code")
     reason: str = Field(description="Brief explanation of why the model wants to edit or is satisfied")
 
+    def format(self) -> RenderableType:
+        return Panel(
+            self.reason,
+            title="Iterating on the code" if self.wants_to_edit else "Finished iterating on the code",
+            title_align="left",
+            border_style="green",
+        )
+
 
 async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
     """Generate or update test code using the agent's process method."""
@@ -104,7 +112,6 @@ async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
             message=HumanMessage(content=prompt),
             panel_title=f"🤖 Generating Test Code (attempt {retry_count + 1}) - {{char_count}} chars",
             border_style="blue" if retry_count == 0 else "yellow",
-            max_lines=25,  # Show more lines to reduce chance of cutting off important content
         )
 
         # Try to extract code from the response

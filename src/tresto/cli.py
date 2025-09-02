@@ -9,6 +9,7 @@ from .commands import test as test_commands
 from .commands.db import app as db_app
 from .commands.hello import hello_command
 from .commands.init import init_command
+from .commands.version import version_command
 
 console = Console()
 app = typer.Typer(
@@ -57,6 +58,7 @@ def register_commands() -> None:
     app.add_typer(models.app, name="models")
     app.add_typer(test_commands.app, name="test")
     app.add_typer(db_app, name="db")
+    app.command("version", help="Show versions of tresto, Playwright, and pytest")(version_command)
 
 
 # Register commands when module is imported

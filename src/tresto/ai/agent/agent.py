@@ -2,17 +2,27 @@ from __future__ import annotations
 
 import asyncio
 import random
+import base64
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from langchain_core.messages import AIMessage, BaseMessage, BaseMessageChunk, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    BaseMessageChunk,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from pydantic import BaseModel
 from rich.console import Console, RenderableType
 from rich.live import Live
 from rich.markdown import Markdown
 from rich.panel import Panel
+from PIL.Image import Image
 
 from tresto.ai import prompts
+from tresto.ai.models.rich_formattable import RichFormattable
 
 if TYPE_CHECKING:
     from langchain.chat_models.base import BaseChatModel
@@ -59,7 +69,12 @@ class Agent:
     ) -> T:
         llm = self.llm.with_structured_output(response_format)
         result = await llm.ainvoke(self.total_messages + ([message] if message else []))
-        console.print(result.model_dump_json(indent=2))
+
+        if isinstance(result, RichFormattable):
+            console.print(result.format())
+        else:
+            console.print(Panel(result.model_dump_json(indent=2)))
+
         return result
 
     async def invoke(
@@ -78,7 +93,9 @@ class Agent:
             max_lines: If specified, only show the last N lines in the panel
         """
         messages = self.total_messages + ([message] if message else [])
-        result = await self._stream_response(messages, panel_title, border_style, max_lines)
+        result = await self._stream_response(
+            messages, panel_title, border_style, max_lines
+        )
 
         if not result:
             return ""
@@ -91,7 +108,11 @@ class Agent:
         return response
 
     async def _stream_response(
-        self, messages: list[BaseMessage], panel_title: str, border_style: str, max_lines: int | None = None
+        self,
+        messages: list[BaseMessage],
+        panel_title: str,
+        border_style: str,
+        max_lines: int | None = None,
     ) -> BaseMessageChunk | None:
         """Stream the AI response with retries on transient overloads."""
         max_retries = 3
@@ -108,7 +129,9 @@ class Agent:
                         else:
                             result += chunk
 
-                        panel = self._create_response_panel(result, panel_title, border_style, max_lines)
+                        panel = self._create_response_panel(
+                            result, panel_title, border_style, max_lines
+                        )
                         live.update(panel)
                 return result
             except Exception as e:  # noqa: BLE001
@@ -136,7 +159,9 @@ class Agent:
         return None
 
     @staticmethod
-    def _process_message(message: BaseMessageChunk, max_lines: int | None = None) -> RenderableType | None:
+    def _process_message(
+        message: BaseMessageChunk, max_lines: int | None = None
+    ) -> RenderableType | None:
         # Return markdown with the message content.
         # Parse each message. Text should be rendered as is. Tool calls should be a text with tool name and args.
 
@@ -149,7 +174,9 @@ class Agent:
                     content.append(item)
                 elif isinstance(item, dict):
                     if item.get("type") == "tool_call":
-                        content.append(f"Tool call: {item.get('name', '')} with args: {item.get('args', '')}")
+                        content.append(
+                            f"Tool call: {item.get('name', '')} with args: {item.get('args', '')}"
+                        )
                     elif text := item.get("text"):
                         content.append(text)
                     elif thinking := item.get("thinking"):
@@ -167,7 +194,10 @@ class Agent:
 
     @staticmethod
     def _create_response_panel(
-        result: BaseMessageChunk, panel_title: str, border_style: str, max_lines: int | None = None
+        result: BaseMessageChunk,
+        panel_title: str,
+        border_style: str,
+        max_lines: int | None = None,
     ) -> RenderableType:
         """Create a panel for displaying the streaming response."""
         markdown_content = Agent._process_message(result, max_lines)
@@ -182,7 +212,9 @@ class Agent:
         # Update title to show line info if max_lines is set
         if max_lines is not None and max_lines > 0:
             title = panel_title.format(
-                char_count=char_count, total_lines=total_lines, showing_lines=min(max_lines, total_lines)
+                char_count=char_count,
+                total_lines=total_lines,
+                showing_lines=min(max_lines, total_lines),
             )
         else:
             title = panel_title.format(char_count=char_count)
@@ -208,7 +240,7 @@ class Agent:
         if tool_calls:
             await self._process_tool_calls(tool_calls)
 
-    async def _run_tool(self, tool_call: dict) -> tuple[str, str]:
+    async def _run_tool(self, tool_call: dict) -> tuple[str, ToolMessage]:
         """Run a tool call."""
         tool_name = tool_call.get("name", "")
         tool = self.tools.get(tool_name)
@@ -216,10 +248,11 @@ class Agent:
         if not tool:
             raise KeyError(f"Tool {tool_name} not found")
 
-        tool_result = await tool.ainvoke(tool_call)
-        tool_message = ToolMessage(content=tool_result.content, tool_call_id=tool_call.get("id", ""))
-        self.state.add_message(tool_message)
-        return tool_name, tool_result.content
+        tool_result: ToolMessage = await tool.ainvoke(tool_call)
+        tool_result.tool_call_id = tool_call.get("id", "")
+
+        self.state.add_message(tool_result)
+        return tool_name, tool_result
 
     async def _process_tool_calls(self, tool_calls: list[dict]) -> None:
         """Process and execute tool calls."""
@@ -238,16 +271,21 @@ class Agent:
                     )
                 )
                 self.state.add_message(
-                    ToolMessage(content=f"Error running tool: {e}", tool_call_id=tool_call.get("id", ""))
+                    ToolMessage(
+                        content=f"Error running tool: {e}",
+                        tool_call_id=tool_call.get("id", ""),
+                    )
                 )
             else:
+                text = tool_result.text()
+                tool_title = f"🔧 Tool {tool_name} [dim]{tool_call['args']}[/dim]"
                 console.print(
                     Panel(
-                        tool_result,
-                        title=f"🔧 Tool {tool_name} [dim]{tool_call['args']}[/dim]",
+                        text,
+                        title=tool_title,
                         title_align="left",
                         border_style="green",
                         highlight=True,
                         expand=True,
-                    )
+                    ) if text else tool_title
                 )

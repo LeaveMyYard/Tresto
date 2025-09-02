@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tresto-ai"
-version = "0.2.0"
+version = "0.2.1"
 description = "AI-powered E2E testing CLI inspired by Playwright codegen"
 readme = "README.md"
 license = "MIT"
@@ -61,9 +61,6 @@ Repository = "https://github.com/LeaveMyYard/Tresto"
 
 [project.scripts]
 tresto = "tresto.cli:app"
-
-[tool.hatch.version]
-path = "src/tresto/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tresto"]

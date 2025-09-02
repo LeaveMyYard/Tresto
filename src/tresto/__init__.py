@@ -1,8 +1,13 @@
 """Tresto: AI-powered E2E testing CLI."""
 
-from tresto.runtime import config, secrets
+from rich.console import Console
 
-__version__ = "0.2.0"
+from tresto.config import config, secrets
+
+console = Console()
+
+
+__version__ = "0.2.1"
 __author__ = "LeaveMyYard"
 __email__ = "zhukovpavel2001@gmail.com"
 

@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING
 
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
-from rich.console import Console
+from rich.console import Console, RenderableType
+from rich.panel import Panel
 
 from tresto.ai.agent.state import Decision
 
@@ -18,6 +19,14 @@ console = Console()
 class DecisionResponse(BaseModel):
     decision: Decision
     reason: str
+
+    def format(self) -> RenderableType:
+        return Panel(
+            self.decision.description,
+            title=f"Decision: {self.decision.value}",
+            title_align="left",
+            border_style="green",
+        )
 
 
 async def tool_decide_next_action(state: TestAgentState) -> TestAgentState:
