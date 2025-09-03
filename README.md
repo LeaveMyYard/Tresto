@@ -1,204 +1,187 @@
 # Tresto 🎭🤖
-## Warning: Still in development
 
-**Test + Presto = Tresto**
+## Status: Pre-Release
 
-An AI-powered E2E testing CLI that revolutionizes how you create and maintain automated tests. Inspired by Playwright's codegen but enhanced with intelligent AI agents that don't just record your actions—they understand, analyze, and write robust test code for you.
+Turbocharge your testing with AI. Tresto pairs Playwright codegen with an agent that understands your intent and iterates toward robust, stable tests.
+
+Convert manual checks into reliable automated E2E in minutes—no boilerplate, no lock‑in, just `tresto.yaml` at your project root.
+
+### Why you’ll love it
+
+- Manual testing everything is slow and fragile. It’s easy to miss regressions, hard to repeat precisely, and burns time every release.
+- Writing E2E tests by hand is tedious. Locators break, timing is flaky, and keeping tests readable and maintainable takes effort.
+- Tresto gives you the best of both worlds. Describe intent like you do in manual testing, and let AI produce durable, maintainable code you’d be proud to commit.
+
+### What makes Tresto different
+
+- Generates fully valid pytest + Playwright tests. No bespoke runner, no lock‑in. You keep industry‑standard tools and best practices.
+- You stay in control. Ask the model to improve selectors, assert more precisely, or refactor flows—Tresto listens and iterates.
+- Post‑release sanity. Tests started failing after your last release? Ask Tresto to investigate each failing test and determine if code needs updating or if it’s a real product bug.
 
 ## ✨ Features
 
-- **🎯 Smart Test Generation**: AI agents that understand your testing intent, not just your clicks
-- **🎭 Playwright Integration**: Built on the robust Playwright testing framework
-- **🤖 AI-Powered Code Writing**: Intelligent agents that write, run, and iterate on test code
-- **🚀 Simple CLI Interface**: Easy-to-use commands for rapid test development
-- **📝 Multiple AI Models**: Currently supports Claude-4, with more models coming soon
-- **⚙️ Configurable**: Flexible configuration system for different project needs
-- **🐍 Python-First**: Generates clean, maintainable Python test code
+- **🎯 Smart test generation**: Natural-language to runnable Playwright tests
+- **🎭 Playwright integration**: Uses the Playwright Python stack
+- **🤖 Agentic workflow**: Generate → run → analyze → iterate
+- **🧠 Multi-provider AI**: Anthropic Claude and others via connectors
+- **⚙️ YAML config**: Single `tresto.yaml` at your project root
+- **🧪 Pytest-native**: Tests are discoverable and runnable with pytest
 
 ## 🚀 Quick Start
 
 ### Installation
 
 ```bash
-# Install via pip (coming soon)
-pip install tresto
+pip install tresto-ai
+```
 
-# Or install from source
+Or from source:
+
+```bash
 git clone https://github.com/LeaveMyYard/Tresto.git
 cd Tresto
-uv sync
+uv tool install --no-cache .
 ```
 
-### Setup Your Project
+### Initialize in your project
 
 ```bash
-# Initialize Tresto in your project
 tresto init
-
-# This creates:
-# - tests/ directory structure
-# - .trestorc configuration file
-# - Basic test templates
 ```
 
-### Record Your First Test
+This will create:
+
+- test scaffold in your chosen directory (default: `./tresto/tests`)
+- a `tresto.yaml` configuration file
+
+Then install Playwright browsers once per machine:
 
 ```bash
-# Start an interactive test recording session
-tresto record
+playwright install
+```
 
-# The CLI will:
-# 1. Ask what you want to test and how to name it
-# 2. Launch a browser and record your actions
-# 3. Have an AI agent write optimized test code
-# 4. Run and iterate on the code until it works perfectly
+### Create and iterate on tests
+
+```bash
+# Open interactive AI-driven flow to create a test
+tresto test create --test-name login.success   # optional name
+
+# Iterate on an existing test with the agent
+tresto test iterate --test-name login.success
+
+# Run tests
+tresto test run
 ```
 
 ## 📋 Requirements
 
-- Python 3.9+
-- A modern web browser (Chrome, Firefox, Safari, or Edge)
-- Claude API key (set as `ANTHROPIC_API_KEY` environment variable)
+- Python 3.11+ (3.13 preferred)
+- Playwright browsers (`playwright install`)
+- API key(s) for your selected AI provider(s)
+  - For Anthropic set `ANTHROPIC_API_KEY`
 
-## 🛠️ Configuration
+## 🛠️ Configuration (tresto.yaml)
 
-After running `tresto init`, edit your `.trestorc` file:
+After `tresto init`, edit `tresto.yaml`:
 
-```toml
-[project]
-name = "my-awesome-app"
-base_url = "http://localhost:3000"
-test_directory = "./tests"
+```yaml
+project:
+  name: my-awesome-app
+  url: http://localhost:3000
+  test_directory: ./tresto/tests
 
-[browser]
-headless = false
-timeout = 30000
-viewport = { width = 1280, height = 720 }
+ai:
+  connector: anthropic
+  model: claude-3-5-sonnet-20241022
+  max_iterations: 5
+  temperature: 0.1
 
-[ai]
-model = "claude-3-5-sonnet-20241022"
-max_iterations = 5
-temperature = 0.1
+browser:
+  headless: true
+  timeout: 30000
+  viewport:
+    width: 1280
+    height: 720
 
-[recording]
-auto_wait = true
-capture_screenshots = true
-generate_selectors = "smart"
+recording:
+  auto_wait: true
+  capture_screenshots: true
+  generate_selectors: auto
+
+secrets:
+  - ANTHROPIC_API_KEY
 ```
 
-## 📖 Commands
+Notes:
 
-### `tresto init`
-Initializes a new Tresto project in the current directory.
+- `secrets` is a list of environment variable names. They must be present in your environment; they are validated at startup.
+- `connector` and `model` must be one of the values exposed by `tresto models list`.
 
-**Options:**
-- `--force`: Overwrite existing configuration
-- `--template`: Use a specific template (default, react, vue, etc.)
+## 📖 CLI Commands
 
-### `tresto record`
-Starts an interactive test recording session.
+- **`tresto`**: Shows a welcome panel and quick tips
+- **`tresto init`**: Interactive setup; creates `tresto.yaml` and scaffolds tests
+  - Options: `--force`, `--template <name>`
+- **`tresto models list`**: List available AI connectors and their models
+- **`tresto test`**: Alias for running tests (equivalent to `tresto test run`)
+- **`tresto test run [PYTEST_ARGS...]`**: Run tests via pytest, forwards extra args
+- **`tresto test create [--test-name <name>]`**: Start agent to create a test
+- **`tresto test iterate [--test-name <name>]`**: Iterate on a test with the agent
+- **`tresto db list-tests|show|clear|info`**: Inspect and manage test data storage
+- **`tresto version`**: Show Tresto version
 
-**Options:**
-- `--name`: Pre-specify the test name
-- `--description`: Pre-specify what the test should do
-- `--headless`: Run browser in headless mode
-- `--iterations`: Maximum AI iterations for code improvement
+Deprecated/changed:
 
-### `tresto run`
-Run existing tests (coming soon).
+- `.trestorc` → replaced with `tresto.yaml`
+- `tresto record` → use `tresto test create` and `tresto test iterate`
 
-### `tresto validate`
-Validate test code and configuration (coming soon).
+## 🏗️ How it works
 
-## 🏗️ How It Works
+1. Inspect project and prompts based on your intent
+2. Generate Playwright tests with the selected model
+3. Run with pytest; collect logs, screenshots, insights
+4. Iterate until assertions and flows are stable
 
-1. **Recording Phase**: Tresto launches a Playwright browser and records your interactions
-2. **Analysis Phase**: AI agents analyze your actions and understand the testing intent
-3. **Code Generation**: AI writes initial test code based on recorded actions and intent
-4. **Validation Phase**: The code is executed and analyzed for correctness
-5. **Iteration Phase**: AI iteratively improves the code based on execution results
-6. **Finalization**: Clean, documented test code is saved to your test directory
+## 🧰 Built with
 
-## 🎯 Example Generated Test
+Tresto is built on proven, open technologies:
 
-```python
-import pytest
-from playwright.async_api import Page, expect
+- Python
+- LangChain and LangGraph for agentic orchestration
+- Playwright and Playwright codegen for robust, modern browser automation
 
-class TestUserLogin:
-    """Test user authentication flow"""
-    
-    async def test_successful_login_redirects_to_dashboard(self, page: Page) -> None:
-        """Test that a valid user can log in and is redirected to dashboard"""
-        # Navigate to login page
-        await page.goto("/login")
-        
-        # Fill in credentials
-        await page.fill('[data-testid="email-input"]', "user@example.com")
-        await page.fill('[data-testid="password-input"]', "password123")
-        
-        # Submit form
-        await page.click('[data-testid="login-button"]')
-        
-        # Verify successful login
-        await expect(page).to_have_url("/dashboard")
-        await expect(page.locator('[data-testid="welcome-message"]')).to_be_visible()
-        await expect(page.locator('[data-testid="user-name"]')).to_contain_text("Welcome")
-```
+Much thanks to the creators and maintainers of these projects—we stand on your shoulders.
 
-## 🔮 Roadmap
+## 🔭 Future plans
 
-- **Multi-Model Support**: Add support for GPT-4, Gemini, and other AI models
-- **Language Support**: Generate tests in TypeScript, JavaScript, and other languages
-- **Visual Testing**: AI-powered visual regression testing
-- **API Testing**: Extend beyond E2E to API test generation
-- **CI/CD Integration**: Built-in support for popular CI/CD platforms
-- **Team Features**: Collaborative test development and sharing
-- **Premium Features**: Advanced AI models and priority support via subscription
+- Automatic locator improvements across your codebase
+- Improved processing of larger tests
+- Supervisor agent that reviews the main agent’s resulting test
+- Cloud model runner: access multiple providers from one subscription
+- …and more improvements coming
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](./docs/CONTRIBUTING.md) for details.
+See [docs/CONTRIBUTING.md](./docs/CONTRIBUTING.md).
 
-### Development Setup
+### Development
 
 ```bash
-# Clone the repository
 git clone https://github.com/LeaveMyYard/Tresto.git
 cd Tresto
-
-# Install dependencies with uv
 uv sync --dev
-
-# Install pre-commit hooks
 pre-commit install
-
-# Run tests
 pytest
-
-# Run linting
 ruff check .
 mypy .
 ```
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **Playwright Team**: For creating an amazing browser automation framework
-- **Anthropic**: For Claude, the AI that powers our intelligent test generation
-- **FastAPI & Typer**: For inspiration on creating developer-friendly CLI tools
+MIT — see [LICENSE](LICENSE).
 
 ## 📞 Support
 
-- 📖 [Documentation](./docs/)
-- 🐛 [Issue Tracker](https://github.com/LeaveMyYard/Tresto/issues)
-- 💬 [Discussions](https://github.com/LeaveMyYard/Tresto/discussions)
-
----
-
-**Made with ❤️ by developers, for developers**
-
-*Tresto: Because testing should be as fast as your ideas* ⚡
+- Docs: `./docs/`
+- Issues: https://github.com/LeaveMyYard/Tresto/issues
+- Discussions: https://github.com/LeaveMyYard/Tresto/discussions
