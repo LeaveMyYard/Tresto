@@ -21,7 +21,7 @@ except ConfigLoadingError:
     secrets: dict[str, str] = RuntimeFailingConfig()
 else:
     config: TrestoConfig = __base_config.project
-    secrets = __base_config.secrets
+    secrets = __base_config.get_secrets()
 
 
 __all__ = ["config", "secrets"]

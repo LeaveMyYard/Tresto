@@ -85,10 +85,10 @@ class TrestoConfig(BaseModel):
     browser: BrowserConfig | None = None
     recording: RecordingConfig | None = None
     verbose: bool = True  # Show detailed code generation by default
-    secrets: dict[str, str] = {}
+    secrets: list[str] = []
 
     @field_validator("secrets", mode="before")
-    def validate_secrets(cls, v: list[str]) -> dict[str, str]:
+    def validate_secrets(cls, v: list[str]) -> list[str]:
         """
         Secrets in tresto.yaml are stored as a list of strings.
         Each one of them should be present in the environment variables.
@@ -107,7 +107,11 @@ class TrestoConfig(BaseModel):
             console.print("Either add them to the environment variables or remove them from the configuration file.")
             raise ValueError("Some secrets are not present in the environment variables.")
 
-        return {s: os.environ[s] for s in v}
+        return v
+    
+    def get_secrets(self) -> dict[str, str]:
+        """Get the secrets from the environment variables."""
+        return {s: os.environ[s] for s in self.secrets}
 
     @classmethod
     def get_config_path(cls) -> Path:

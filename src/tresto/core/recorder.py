@@ -9,6 +9,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from rich.console import Console
+
+console = Console()
+
 
 class BrowserRecorder:
     """Thin wrapper around the Playwright code generator CLI.
@@ -67,10 +71,25 @@ class BrowserRecorder:
 
         for command in command_variants:
             try:
-                process = await asyncio.create_subprocess_exec(*command)
-                return_code = await process.wait()
+                process = await asyncio.create_subprocess_exec(
+                    *command,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                stdout_data, stderr_data = await process.communicate()
+                return_code = process.returncode
+                if stdout_data:
+                    console.print(f"Command output: {stdout_data.decode(errors='replace')}")
+                if stderr_data:
+                    console.print(f"Command error: {stderr_data.decode(errors='replace')}")
+
+                if "ERR_CONNECTION_REFUSED" in stderr_data.decode(errors='replace'):
+                    console.print("[red]Error: Could not connect to the target URL. Is it running?[/red]")
+                    raise RuntimeError("Could not connect to the target URL. Is it running?")
+                
                 break
             except FileNotFoundError as exc:
+                console.print(f"[red] ({exc.__class__.__name__}) Error running command: {exc}[/red]")
                 last_error = exc
                 continue
 

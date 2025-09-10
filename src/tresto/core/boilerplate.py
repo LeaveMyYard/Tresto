@@ -43,7 +43,7 @@ def generate_boilerplate(target_dir: Path) -> None:
     target_path.mkdir(parents=True, exist_ok=True)
 
     # Copy all files and directories from source to target
-    console.print(f"[blue]Copying boilerplate from {source_path} to {target_path}...[/blue]")
+    console.print(f"[blue]Copying boilerplate to {target_path}...[/blue]")
 
     copied_files = 0
     for source_item in source_path.rglob("*"):
