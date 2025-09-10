@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tresto-ai"
-version = "0.3.0"
+version = "0.3.1"
 description = "AI-powered E2E testing CLI inspired by Playwright codegen"
 readme = "README.md"
 license = "MIT"
