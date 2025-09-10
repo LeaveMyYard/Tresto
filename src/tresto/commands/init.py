@@ -67,7 +67,7 @@ async def _init_command(force: bool, template: str) -> None:
             test_directory=test_directory,
         ),
         ai=AIConfig(
-            connector=selected_model,
+            connector=selected_connector_name,
             model=selected_model,
         ),
     )

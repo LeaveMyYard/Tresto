@@ -5,7 +5,7 @@ from __future__ import annotations
 import typer
 from rich.console import Console
 
-from tresto.core.config.main import TrestoConfig
+from tresto.core.config.main import ConfigLoadingError, TrestoConfig
 
 console = Console()
 
@@ -22,4 +22,8 @@ def record_command(
     console.print("Let's create an intelligent E2E test together!\n")
 
     # Load configuration
-    TrestoConfig.load_config()
+    try:
+        TrestoConfig.load_config()
+    except ConfigLoadingError as e:
+        console.print("[red]Error:[/red] Could not load configuration. Run 'tresto init' first.")
+        raise typer.Exit(1) from e

@@ -74,6 +74,9 @@ class ProjectConfig(BaseModel):
     test_directory: Path
 
 
+class ConfigLoadingError(Exception):
+    """Error loading configuration."""
+
 class TrestoConfig(BaseModel):
     """Main Tresto configuration."""
 
@@ -119,7 +122,7 @@ class TrestoConfig(BaseModel):
         if not config_path.exists():
             console.print("[red]Error:[/red] No tresto.yaml found.")
             console.print("Run [bold]tresto init[/bold] to create a configuration file.")
-            raise typer.Exit(0)
+            raise ConfigLoadingError("No tresto.yaml found.")
 
         try:
             with open(config_path, encoding="utf-8") as f:
@@ -127,7 +130,7 @@ class TrestoConfig(BaseModel):
             return cls(**config_data)
         except (OSError, ValueError, TypeError) as e:
             console.print(f"[red]{e.__class__.__name__} loading configuration:[/red] {e}")
-            raise typer.Exit(-1) from e
+            raise ConfigLoadingError(e) from e
 
     def save(self) -> Path:
         """Save configuration to tresto.yaml file."""
@@ -135,7 +138,8 @@ class TrestoConfig(BaseModel):
 
         try:
             with open(config_path, "w", encoding="utf-8") as f:
-                yaml.safe_dump(self.model_dump(), f, sort_keys=False)
+                # Use JSON mode to ensure Path and other types are serialized
+                yaml.safe_dump(self.model_dump(mode="json"), f, sort_keys=False)
         except (OSError, ValueError) as e:
             console.print(f"[red]Error saving configuration:[/red] {e}")
             raise typer.Exit(-1) from e

@@ -8,7 +8,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from tresto.core.config.main import TrestoConfig
+from tresto.core.config.main import ConfigLoadingError, TrestoConfig
 from tresto.core.database import TestDatabase
 
 console = Console()
@@ -21,15 +21,15 @@ def list_tests() -> None:
     """List all tests with stored data."""
     try:
         config = TrestoConfig.load_config()
-    except typer.Exit:
+    except ConfigLoadingError as e:
         console.print("[red]Error:[/red] Could not load configuration. Run 'tresto init' first.")
-        return
+        raise typer.Exit(1) from e
 
     tests = TestDatabase.list_all_tests(config.project.test_directory)
 
     if not tests:
         console.print("📂 No test data found in database")
-        return
+        raise typer.Exit(1)
 
     table = Table(title="🗄️ Test Database")
     table.add_column("Test Name", style="cyan")
@@ -54,9 +54,9 @@ def show(test_name: str, data_type: str = "project_inspection") -> None:
     """
     try:
         config = TrestoConfig.load_config()
-    except typer.Exit:
+    except ConfigLoadingError as e:
         console.print("[red]Error:[/red] Could not load configuration. Run 'tresto init' first.")
-        return
+        raise typer.Exit(1) from e
 
     test_db = TestDatabase(test_directory=config.project.test_directory, test_name=test_name)
 
@@ -73,7 +73,7 @@ def show(test_name: str, data_type: str = "project_inspection") -> None:
         console.print(
             f"[red]Error:[/red] Unknown data type '{data_type}'. Use: project_inspection, playwright_investigation, test_insights"
         )
-        return
+        raise typer.Exit(1)
 
     if data:
         console.print(f"\n{title} for '{test_name}':")
@@ -88,15 +88,15 @@ def clear(test_name: str, confirm: bool = typer.Option(False, "--yes", "-y", hel
     """Clear all stored data for a specific test."""
     try:
         config = TrestoConfig.load_config()
-    except typer.Exit:
+    except ConfigLoadingError as e:
         console.print("[red]Error:[/red] Could not load configuration. Run 'tresto init' first.")
-        return
+        raise typer.Exit(1) from e
 
     test_db = TestDatabase(test_directory=config.project.test_directory, test_name=test_name)
 
     if not test_db.test_data_dir.exists():
         console.print(f"[yellow]No data found for test '{test_name}'[/yellow]")
-        return
+        raise typer.Exit(1)
 
     stored_files = test_db.list_stored_data()
 
@@ -107,7 +107,7 @@ def clear(test_name: str, confirm: bool = typer.Option(False, "--yes", "-y", hel
 
         if not typer.confirm("Are you sure?"):
             console.print("Cancelled.")
-            return
+            raise typer.Exit(1)
 
     test_db.clear_test_data()
     console.print(f"[green]✅ Cleared data for test '{test_name}'[/green]")
@@ -118,9 +118,9 @@ def info() -> None:
     """Show database information and statistics."""
     try:
         config = TrestoConfig.load_config()
-    except typer.Exit:
+    except ConfigLoadingError as e:
         console.print("[red]Error:[/red] Could not load configuration. Run 'tresto init' first.")
-        return
+        raise typer.Exit(1) from e
 
     test_dir = Path(config.project.test_directory)
     database_dir = test_dir / ".database"
