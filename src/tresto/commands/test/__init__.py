@@ -23,8 +23,10 @@ def _default(ctx: typer.Context) -> None:
 
 app.command("create", help="Create a new test scaffold")(create_module.create_test_command)
 
+
 def _run_entry(ctx: typer.Context) -> None:
     run_tests_command(ctx)
+
 
 app.command(
     "run",

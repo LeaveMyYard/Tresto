@@ -64,7 +64,7 @@ async def _init_command(force: bool, template: str) -> None:
         project=ProjectConfig(
             name=project_name,
             url=base_url,
-            test_directory=test_directory,
+            test_directory=Path(test_directory),
         ),
         ai=AIConfig(
             connector=selected_connector_name,

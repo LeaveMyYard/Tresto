@@ -77,6 +77,7 @@ class ProjectConfig(BaseModel):
 class ConfigLoadingError(Exception):
     """Error loading configuration."""
 
+
 class TrestoConfig(BaseModel):
     """Main Tresto configuration."""
 

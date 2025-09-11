@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import random
-import base64
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -19,7 +18,6 @@ from rich.console import Console, RenderableType
 from rich.live import Live
 from rich.markdown import Markdown
 from rich.panel import Panel
-from PIL.Image import Image
 
 from tresto.ai import prompts
 from tresto.ai.models.rich_formattable import RichFormattable
@@ -93,9 +91,7 @@ class Agent:
             max_lines: If specified, only show the last N lines in the panel
         """
         messages = self.total_messages + ([message] if message else [])
-        result = await self._stream_response(
-            messages, panel_title, border_style, max_lines
-        )
+        result = await self._stream_response(messages, panel_title, border_style, max_lines)
 
         if not result:
             return ""
@@ -129,9 +125,7 @@ class Agent:
                         else:
                             result += chunk
 
-                        panel = self._create_response_panel(
-                            result, panel_title, border_style, max_lines
-                        )
+                        panel = self._create_response_panel(result, panel_title, border_style, max_lines)
                         live.update(panel)
                 return result
             except Exception as e:  # noqa: BLE001
@@ -159,9 +153,7 @@ class Agent:
         return None
 
     @staticmethod
-    def _process_message(
-        message: BaseMessageChunk, max_lines: int | None = None
-    ) -> RenderableType | None:
+    def _process_message(message: BaseMessageChunk, max_lines: int | None = None) -> RenderableType | None:
         # Return markdown with the message content.
         # Parse each message. Text should be rendered as is. Tool calls should be a text with tool name and args.
 
@@ -174,9 +166,7 @@ class Agent:
                     content.append(item)
                 elif isinstance(item, dict):
                     if item.get("type") == "tool_call":
-                        content.append(
-                            f"Tool call: {item.get('name', '')} with args: {item.get('args', '')}"
-                        )
+                        content.append(f"Tool call: {item.get('name', '')} with args: {item.get('args', '')}")
                     elif text := item.get("text"):
                         content.append(text)
                     elif thinking := item.get("thinking"):
@@ -287,5 +277,7 @@ class Agent:
                         border_style="green",
                         highlight=True,
                         expand=True,
-                    ) if text else tool_title
+                    )
+                    if text
+                    else tool_title
                 )

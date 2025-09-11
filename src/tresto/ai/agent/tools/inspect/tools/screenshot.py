@@ -21,7 +21,6 @@ def create_bound_screenshot_tool(manager: RecordingManager) -> Tool:
         except ValueError as e:
             return f"❌ {e}"
         else:
-
             byte_stream = BytesIO()
             image.save(byte_stream, format="png")
 

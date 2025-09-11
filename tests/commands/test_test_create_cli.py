@@ -38,7 +38,10 @@ def test_tresto_test_create_scaffolds_file_after_init(tmp_path: Path, monkeypatc
 
     # Answer defaults for init, and provide values for prompts without defaults
     def _answer_prompt(
-        message: str, *, default: str | None = None, choices: list[str] | None = None  # noqa: ARG001
+        message: str,
+        *,
+        default: str | None = None,
+        choices: list[str] | None = None,  # noqa: ARG001
     ) -> str:
         if default is not None:
             return default

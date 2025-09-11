@@ -13,7 +13,6 @@ from tresto.config import config
 console = Console()
 
 
-
 def run_tests_command(ctx: typer.Context | None = None) -> None:
     """Run all tests using pytest and show results.
 
@@ -21,7 +20,7 @@ def run_tests_command(ctx: typer.Context | None = None) -> None:
     """
     console.print("\n[bold blue]🧪 Running tests with pytest[/bold blue]")
 
-    target = config.test_directory
+    target = config.project.test_directory
     if not target.exists():
         console.print(f"[red]No tests directory found at {target}[/red]")
         raise typer.Exit(1)

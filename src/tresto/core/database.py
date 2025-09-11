@@ -105,9 +105,9 @@ class TestDatabase(BaseModel):
             shutil.rmtree(self.test_data_dir)
 
     @classmethod
-    def list_all_tests(cls, test_directory: str) -> list[dict[str, str]]:
+    def list_all_tests(cls, test_directory: str | Path) -> list[dict[str, str]]:
         """List all tests with stored data."""
-        test_dir = Path(test_directory)
+        test_dir = test_directory if isinstance(test_directory, Path) else Path(test_directory)
         database_dir = test_dir / ".database"
 
         if not database_dir.exists():

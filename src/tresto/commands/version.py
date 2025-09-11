@@ -6,7 +6,6 @@ from tresto import __version__ as tresto_version
 console = Console()
 
 
-
 def version_command() -> None:
     """Print version of Tresto."""
 
