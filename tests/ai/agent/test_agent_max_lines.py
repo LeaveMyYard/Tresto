@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from src.tresto.ai.agent.agent import Agent, _get_last_n_lines
+from tresto.ai.agent.agent import Agent, _get_last_n_lines
 
 
 class TestGetLastNLines:

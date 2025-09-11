@@ -58,7 +58,8 @@ def test_screenshot_tool_at_time() -> None:
     tools = _tool_dict(manager)
     ts = datetime(2024, 1, 1, 12, 0, 0, 400_000, tzinfo=UTC)
     out = tools["screenshot"].invoke({"timestamp": ts})
-    assert "Screenshot available" in out
+    # Expect a list payload with image data
+    assert isinstance(out, list) and out and out[0].get("type") == "image"
 
 
 def test_show_with_timestamp() -> None:

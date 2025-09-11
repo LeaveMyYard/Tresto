@@ -5,9 +5,9 @@ We patch Prompt.ask to feed defaults so the command runs without user input.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Any
-import sys
 from unittest.mock import patch
 
 import tresto.commands.init as init_mod

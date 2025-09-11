@@ -121,6 +121,7 @@ async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
             console.print(
                 Panel(last_error, title="❌ Invalid Code Block", title_align="left", border_style="red", highlight=True)
             )
+            retry_count += 1
             continue
 
         # Validate the extracted code
@@ -141,3 +142,5 @@ async def generate_or_update_code(state: TestAgentState) -> TestAgentState:
 
         if not result.wants_to_edit:
             break
+
+    return state

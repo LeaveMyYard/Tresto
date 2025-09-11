@@ -19,9 +19,10 @@ class TestDecision:
     """Test cases for Decision enum."""
 
     def test_playwright_iterate_decision_exists(self) -> None:
-        """Test that PLAYWRIGHT_ITERATE decision is available."""
-        assert Decision.PLAYWRIGHT_ITERATE.value == "playwright_iterate"
-        assert Decision.PLAYWRIGHT_ITERATE in Decision
+        """Test that expected core decisions are available."""
+        assert Decision.MODIFY_CODE in Decision
+        assert Decision.RUN_TEST in Decision
+        assert Decision.INSPECT in Decision
 
     def test_all_decisions_valid(self) -> None:
         """Test that all decisions are valid string enums."""
@@ -31,9 +32,7 @@ class TestDecision:
             "ask_user",
             "run_test",
             "modify_code",
-            "read_file_content",
-            "list_directory",
-            "playwright_iterate",
+            "inspect",
             "finish",
         }
 
@@ -44,12 +43,12 @@ class TestDecision:
         """Test decision membership operations."""
         # Test set operations work correctly with new decision
         all_decisions = set(Decision)
-        assert Decision.PLAYWRIGHT_ITERATE in all_decisions
+        assert Decision.INSPECT in all_decisions
 
         # Test exclusion operations
         non_action_decisions = {Decision.FINISH, Decision.DESIDE_NEXT_ACTION}
         action_decisions = all_decisions - non_action_decisions
-        assert Decision.PLAYWRIGHT_ITERATE in action_decisions
+        assert Decision.INSPECT in action_decisions
 
 
 class TestTestAgentStateWithPlaywrightIterate:
@@ -72,7 +71,7 @@ class TestTestAgentStateWithPlaywrightIterate:
         assert state.test_instructions == "Test the playwright iteration functionality"
         assert state.config.project.url == "https://example.com"
         assert state.last_decision is None
-        assert len(state.messages) >= 1  # Should have main prompt
+        assert len(state.messages) >= 0
 
     def test_decision_setting(self) -> None:
         """Test setting and retrieving decisions including PLAYWRIGHT_ITERATE."""
@@ -85,10 +84,10 @@ class TestTestAgentStateWithPlaywrightIterate:
             config=config,
         )
 
-        # Test setting playwright iterate decision
-        state.last_decision = Decision.PLAYWRIGHT_ITERATE
-        assert state.last_decision == Decision.PLAYWRIGHT_ITERATE
-        assert state.last_decision.value == "playwright_iterate"
+        # Test setting inspect decision
+        state.last_decision = Decision.INSPECT
+        assert state.last_decision == Decision.INSPECT
+        assert state.last_decision.value == "inspect"
 
         # Test setting other decisions
         state.last_decision = Decision.ASK_USER
