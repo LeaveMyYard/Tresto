@@ -85,7 +85,7 @@ Tresto/
 
 ### 1. Code Quality (`pyproject.toml`)
 - **Ruff** for fast linting (120 char line length)
-- **Black** for code formatting 
+- **Black** for code formatting
 - **MyPy** for static type checking (Python 3.13)
 - **Pre-commit hooks** for automated quality checks
 

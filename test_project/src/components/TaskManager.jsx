@@ -39,7 +39,7 @@ const TaskManager = ({ user, onLogout }) => {
 
   const addTask = (e) => {
     e.preventDefault();
-    
+
     if (!newTask.trim()) {
       return;
     }
@@ -176,7 +176,7 @@ const TaskManager = ({ user, onLogout }) => {
                     className="task-checkbox"
                     data-testid={`task-checkbox-${task.id}`}
                   />
-                  
+
                   <div className="task-content-wrapper" style={{ flex: 1 }}>
                     <span
                       className={`task-text ${task.completed ? 'completed' : ''}`}

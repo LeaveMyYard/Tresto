@@ -44,7 +44,7 @@ def execute_file_exploration_command(command: str, project_path: Path) -> FileEx
             return FileExplorationResult(
                 success=True,
                 output="""📁 File Exploration Commands:
-                
+
 • list <path> - List directory contents (e.g., 'list src', 'list .')
 • read <file> - Read file contents (e.g., 'read package.json', 'read src/App.js')
 • find <pattern> - Find files matching pattern (e.g., 'find *.py', 'find component')
@@ -53,7 +53,7 @@ def execute_file_exploration_command(command: str, project_path: Path) -> FileEx
 
 Examples:
 • list . - List project root
-• list src - List src directory  
+• list src - List src directory
 • read src/components/Login.tsx - Read login component
 • find *.test.* - Find test files
 • find login - Find files with 'login' in name""",

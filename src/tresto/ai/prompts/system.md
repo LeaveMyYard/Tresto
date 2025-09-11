@@ -14,7 +14,7 @@ tresto.config.url # The URL of the website to test, use together with "await pag
 
 Available secrets: {available_secrets}
 
-You will be running in a loop and will be able to select actions to take. 
+You will be running in a loop and will be able to select actions to take.
 Do not finish until you have verified that the test is working or if you think that you are not able to finish it.
 In case you are not able to finish it, you should explicitly say that you are not able to finish it to the user and why.
 

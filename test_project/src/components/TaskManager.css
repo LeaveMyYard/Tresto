@@ -285,42 +285,42 @@
     max-height: 100vh;
     border-radius: 0;
   }
-  
+
   .task-header {
     padding: 15px 20px;
     flex-direction: column;
     gap: 10px;
     text-align: center;
   }
-  
+
   .welcome-text {
     font-size: 20px;
   }
-  
+
   .task-content {
     padding: 20px;
   }
-  
+
   .task-stats {
     padding: 15px;
   }
-  
+
   .stat-number {
     font-size: 24px;
   }
-  
+
   .task-form {
     flex-direction: column;
     gap: 10px;
   }
-  
+
   .task-item {
     padding: 15px;
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
   }
-  
+
   .task-content-wrapper {
     width: 100%;
   }

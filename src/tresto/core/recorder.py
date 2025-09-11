@@ -86,7 +86,7 @@ class BrowserRecorder:
                 if "ERR_CONNECTION_REFUSED" in stderr_data.decode(errors='replace'):
                     console.print("[red]Error: Could not connect to the target URL. Is it running?[/red]")
                     raise RuntimeError("Could not connect to the target URL. Is it running?")
-                
+
                 break
             except FileNotFoundError as exc:
                 console.print(f"[red] ({exc.__class__.__name__}) Error running command: {exc}[/red]")

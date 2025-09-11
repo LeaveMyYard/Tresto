@@ -17,10 +17,10 @@ except ConfigLoadingError:
         def __getattribute__(self, name: str) -> Any:
             raise ConfigLoadingError("Could not load configuration.")
 
-    config: TrestoConfig = RuntimeFailingConfig()
-    secrets: dict[str, str] = RuntimeFailingConfig()
+    config: TrestoConfig | RuntimeFailingConfig = RuntimeFailingConfig()
+    secrets: dict[str, str] | RuntimeFailingConfig = RuntimeFailingConfig()
 else:
-    config: TrestoConfig = __base_config.project
+    config = __base_config
     secrets = __base_config.get_secrets()
 
 

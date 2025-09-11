@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, ValidationError
 from rich.console import Console
@@ -64,14 +64,14 @@ class TrestoRunner(BaseModel):
             # We already have a test name, skip the input
             return self.test_name
 
-        return Prompt.ask("Enter the test name (use dots or slashes for subfolders)")
+        return cast(str, Prompt.ask("Enter the test name (use dots or slashes for subfolders)"))
 
     def _get_test_description(self) -> str:
         description = self._try_load_test_description_from_file_header()
         if description is not None:
             return description
 
-        return Prompt.ask("Describe what this test should do")
+        return cast(str, Prompt.ask("Describe what this test should do"))
 
     def _try_load_test_description_from_file_header(self) -> str | None:
         assert self._pathfinder is not None
@@ -109,6 +109,8 @@ class TrestoRunner(BaseModel):
 
     async def _run_agent(self) -> None:
         self.console.print("🤖 Launching AI Agent to generate and run your test")
+
+        assert self._pathfinder is not None
 
         agent = LangGraphTestAgent(
             self.config,

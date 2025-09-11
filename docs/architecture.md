@@ -130,7 +130,7 @@ src/tresto/
 ```python
 class TrestoConfig(BaseModel):
     project: ProjectConfig
-    browser: BrowserConfig  
+    browser: BrowserConfig
     ai: AIConfig
     recording: RecordingConfig
 ```
@@ -180,11 +180,11 @@ class TestGenerationAgent:
 class AIModel(ABC):
     @abstractmethod
     async def generate_code(prompt: str) -> str
-    
+
 # ai/models/claude.py
 class ClaudeModel(AIModel): ...
 
-# ai/models/gpt.py  
+# ai/models/gpt.py
 class GPTModel(AIModel): ...
 ```
 

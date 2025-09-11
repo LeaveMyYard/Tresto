@@ -108,7 +108,7 @@ class TrestoConfig(BaseModel):
             raise ValueError("Some secrets are not present in the environment variables.")
 
         return v
-    
+
     def get_secrets(self) -> dict[str, str]:
         """Get the secrets from the environment variables."""
         return {s: os.environ[s] for s in self.secrets}

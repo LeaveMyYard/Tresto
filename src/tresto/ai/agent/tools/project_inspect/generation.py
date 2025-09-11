@@ -29,23 +29,23 @@ async def generate_inspection_goals(state: TestAgentState) -> str:
             f"""\
             You are about to start exploring project files to understand the codebase structure.
             Before beginning exploration, you need to define clear inspection goals.
-            
+
             Current context:
             - Test name: {state.test_name}
             - Test instructions: {state.test_instructions}
             - Project path: {Path.cwd()}
-            
+
             YOUR TASK:
             Define 2-4 specific project inspection goals focused on finding files related to your test case.
             Focus on what you need to discover in the source code to understand the application structure.
-            
+
             Example goals:
             • "Find React components related to user authentication (login, signup, etc.)"
             • "Locate API endpoints and services that handle user data"
             • "Identify form validation logic and error handling patterns"
             • "Find test files to understand existing testing patterns"
             • "Locate configuration files and understand project structure"
-            
+
             Write your inspection goals clearly, one per line, starting with "Goal:".
             Be specific about what types of files and functionality you want to discover.
             """
@@ -103,21 +103,21 @@ async def generate_file_exploration_command(
             You are exploring project files to understand the codebase structure.
             Issue ONE command at a time to investigate files systematically.
             {context_prompt}{history_info}
-            
+
             AVAILABLE COMMANDS:
             • list <path> - List directory contents (start with 'list .')
-            • read <file> - Read specific file contents  
+            • read <file> - Read specific file contents
             • find <pattern> - Find files matching pattern
             • finish - Complete exploration and generate report
             • help - Show command help
-            
+
             🎯 SYSTEMATIC EXPLORATION STRATEGY:
             1. Start with 'list .' to see project structure
             2. Explore key directories: 'list src', 'list components', etc.
             3. Find relevant files: 'find login', 'find *.test.*', 'find component'
             4. Read important files: 'read src/App.js', 'read package.json'
             5. Focus on files related to your test case
-            
+
             EXPLORATION EXAMPLES:
             • list . - See project root structure
             • list src - Explore source directory
@@ -125,7 +125,7 @@ async def generate_file_exploration_command(
             • read src/components/LoginForm.tsx - Read login component
             • find *.test.* - Find test files
             • find api - Find API-related files
-            
+
             YOUR TASK:
             Write ONE file exploration command. Focus on discovering files related to your test case.
             Use 'finish' when you have sufficient understanding of the project structure.
@@ -174,26 +174,26 @@ async def generate_progress_reflection(
             f"""\
             You have been exploring project files for {exploration_attempts} attempts.
             Time to reflect on your progress toward your inspection goals.
-            
+
             YOUR ORIGINAL INSPECTION GOALS:
             {inspection_goals}
-            
+
             RECENT EXPLORATION FINDINGS:
             {findings_summary}
-            
+
             YOUR TASK:
             Reflect on your progress and decide whether to continue or finish exploration.
-            
+
             Think verbosely about:
             1. Which goals have you accomplished or made progress on?
             2. What important files or patterns are you still missing?
             3. Have you discovered the key components needed for your test case?
             4. Are you getting diminishing returns from continued exploration?
-            
+
             Based on your reflection, end with either:
             - "CONTINUE: [reason why you need to keep exploring]"
             - "FINISH: [explanation of why you have enough information]"
-            
+
             Be honest about whether continued exploration will be productive.
             Focus on finding files directly related to your test case.
             """
@@ -247,10 +247,10 @@ async def generate_inspection_report(state: TestAgentState, explorations: list[F
         textwrap.dedent(
             f"""\
             Based on the project file exploration below, generate a comprehensive project inspection report.
-            
+
             Project exploration performed:
             {exploration_summary}
-            
+
             The report should include:
             1. **Project Structure Overview**: Key directories and organization
             2. **Relevant Files for Test Case**: List of files directly related to the test case with brief descriptions
@@ -258,24 +258,24 @@ async def generate_inspection_report(state: TestAgentState, explorations: list[F
             4. **Patterns and Conventions**: Coding patterns, file naming, project conventions observed
             5. **Dependencies and Technologies**: Key libraries and frameworks used
             6. **Test-Related Insights**: Existing test patterns, testing setup, relevant test files
-            
+
             Format the report clearly with sections and bullet points.
             Focus on information that will help with writing effective tests.
             Include specific file paths and brief explanations of what each file contains.
-            
+
             Example format:
             ## Project Structure Overview
             - src/components/ - React components
             - src/services/ - API and business logic
-            
+
             ## Relevant Files for Test Case
             - src/components/LoginForm.tsx - Main login component with form validation
             - src/services/auth.js - Authentication API calls and token management
-            
+
             ## Key Components Found
             - LoginForm component handles user authentication
             - AuthService manages login/logout operations
-            
+
             Write a clear, structured project inspection report.
             """
         )

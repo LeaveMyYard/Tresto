@@ -8,7 +8,7 @@
 - Additionally, I think just the html investigation should be better without the "report" part. Report functionality seemed to be loosing information.
 - So we need to rewrite the playwright_iterate to html_explore
 
-## State: 
+## State:
 DONE ✅
 
 
@@ -19,7 +19,7 @@ DONE ✅
 - I think this is a good idea to utilize for the tresto agent.
 - We need to add ability for model to see the screenshot after the playwright test is finished (in addition to the html investigation)
 
-## State: 
+## State:
 DONE ✅
 
 
@@ -29,7 +29,7 @@ DONE ✅
 - I think it would be good to add ability for model to add data-testid or other attributes to the html investigation.
 - Because this feature would change the user's code (and not only test), I think it should be configurable.
 
-## State: 
+## State:
 Re-evaluate the idea
 
 
@@ -39,7 +39,7 @@ Re-evaluate the idea
   - Console Logs of the browser
   - Screenshots right after the action is performed (sometimes a delay between the action and completing removes some information, like notifications)
 
-## State: 
+## State:
 DONE ✅
 
 
@@ -51,7 +51,7 @@ IN PROGRESS 🚧
 
 
 # Note 6:
-- Add "Human in the loop" feature, persist all user inputs in the docstring 
+- Add "Human in the loop" feature, persist all user inputs in the docstring
 
 
 # Note 7:
@@ -64,7 +64,7 @@ IN PROGRESS 🚧
 
 
 # Note 9:
-- We need to make model to impor tresto and use something like 
+- We need to make model to impor tresto and use something like
 
 ```python
 import tresto
@@ -74,7 +74,7 @@ async def test_campaigns_error_missing_config(page: Page):
     await page.goto(tresto.config.url)
 ```
 
-And then make it possible to store secrets using 
+And then make it possible to store secrets using
 
 ```python
 tresto.secrets["api_key"] = "1234567890"

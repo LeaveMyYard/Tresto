@@ -33,5 +33,5 @@ def create_bound_screenshot_tool(manager: RecordingManager) -> Tool:
                     "data": base64.b64encode(byte_stream.getvalue()).decode("utf-8"),
                 }
             ]
-        
+
     return screenshot
