@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from langchain.tools import Tool, tool
+from langchain.tools import BaseTool, tool
 from pydantic import BaseModel, Field
 
 from tresto.ai.agent.tools.inspect.recording import RecordingManager
@@ -16,7 +16,7 @@ class TextArgs(BaseModel):
     timestamp: datetime | None = Field(None, description="Timestamp to inspect at (UTC, optional)")
 
 
-def create_bound_text_tool(manager: RecordingManager) -> Tool:
+def create_bound_text_tool(manager: RecordingManager) -> BaseTool:
     @tool(description="Show text content of element", args_schema=TextArgs)
     def text(selector: str, timestamp: datetime | None = None) -> str:
         """Show text content of element using CSS selector."""

@@ -102,7 +102,7 @@ class LangGraphTestAgent:
 
     async def run(self) -> None:
         try:
-            await self._app.ainvoke(self.state, {"recursion_limit": 100})
+            await self._app.ainvoke(self.state, {"recursion_limit": 100})  # type: ignore
         except Exception:  # noqa: BLE001
             self._console.print_exception()
         else:

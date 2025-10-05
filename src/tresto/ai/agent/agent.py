@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import random
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import (
     AIMessage,
@@ -53,7 +53,7 @@ class Agent:
     tools: dict[str, BaseTool]
 
     @property
-    def total_messages(self) -> list[BaseMessage]:
+    def total_messages(self) -> list[BaseMessage | dict[str, Any] | SystemMessage]:
         return (
             [SystemMessage(prompts.system(self.state.config.secrets))]
             + self.state.messages
@@ -67,6 +67,7 @@ class Agent:
     ) -> T:
         llm = self.llm.with_structured_output(response_format)
         result = await llm.ainvoke(self.total_messages + ([message] if message else []))
+        assert isinstance(result, response_format), f"Result is not of type {response_format}"
 
         if isinstance(result, RichFormattable):
             console.print(result.format())
@@ -105,7 +106,7 @@ class Agent:
 
     async def _stream_response(
         self,
-        messages: list[BaseMessage],
+        messages: list[BaseMessage | dict[str, Any] | SystemMessage],
         panel_title: str,
         border_style: str,
         max_lines: int | None = None,
@@ -153,7 +154,10 @@ class Agent:
         return None
 
     @staticmethod
-    def _process_message(message: BaseMessageChunk, max_lines: int | None = None) -> RenderableType | None:
+    def _process_message(
+        message: BaseMessageChunk,
+        max_lines: int | None = None,
+    ) -> RenderableType | None:
         # Return markdown with the message content.
         # Parse each message. Text should be rendered as is. Tool calls should be a text with tool name and args.
 
@@ -220,7 +224,7 @@ class Agent:
     async def _handle_ai_response(self, result: BaseMessageChunk) -> None:
         """Handle the AI response by adding it to state and processing tool calls."""
 
-        tool_calls: list[dict] | None = getattr(result, "tool_calls", None)
+        tool_calls: list[dict[str, Any]] | None = getattr(result, "tool_calls", None)
 
         # Add the AI message to the conversation history
         ai_message = AIMessage(content=result.content, tool_calls=tool_calls)
@@ -230,7 +234,7 @@ class Agent:
         if tool_calls:
             await self._process_tool_calls(tool_calls)
 
-    async def _run_tool(self, tool_call: dict) -> tuple[str, ToolMessage]:
+    async def _run_tool(self, tool_call: dict[str, Any]) -> tuple[str, ToolMessage]:
         """Run a tool call."""
         tool_name = tool_call.get("name", "")
         tool = self.tools.get(tool_name)
@@ -244,7 +248,7 @@ class Agent:
         self.state.add_message(tool_result)
         return tool_name, tool_result
 
-    async def _process_tool_calls(self, tool_calls: list[dict]) -> None:
+    async def _process_tool_calls(self, tool_calls: list[dict[str, Any]]) -> None:
         """Process and execute tool calls."""
         for tool_call in tool_calls:
             try:

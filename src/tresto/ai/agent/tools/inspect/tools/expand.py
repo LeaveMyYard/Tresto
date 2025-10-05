@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from langchain.tools import Tool, tool
+from langchain.tools import BaseTool, tool
 from pydantic import BaseModel, Field, field_validator
 
 from tresto.ai.agent.tools.inspect.recording import RecordingManager
@@ -27,7 +27,7 @@ class ExpandArgs(BaseModel):
         return v
 
 
-def create_bound_expand_tool(manager: RecordingManager) -> Tool:
+def create_bound_expand_tool(manager: RecordingManager) -> BaseTool:
     @tool(description="Expand specific element using CSS selector", args_schema=ExpandArgs)
     def expand(selector: str, depth: int = 3, timestamp: datetime | None = None) -> str:
         """Expand specific element using CSS selector with specified depth."""

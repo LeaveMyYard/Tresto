@@ -87,6 +87,7 @@ class RecordingManager:
         html_snapshots: dict[datetime, str] = {}
         screenshots: dict[datetime, Image] = {}
         logs: list[tuple[datetime, str]] = []
+        data: Any
 
         try:
             with zipfile.ZipFile(trace_path, "r") as zf:

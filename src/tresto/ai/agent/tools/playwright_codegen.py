@@ -19,12 +19,12 @@ async def tool_record_user_input(state: TestAgentState) -> TestAgentState:
     recorder = BrowserRecorder(config=state.config)
 
     with console.status("🔍 Running [bold]`playwright codegen`[/bold] to record user input..."):
-        state.current_recording_code = await recorder.start_recording(
+        state.current_recording_code = code = await recorder.start_recording(
             url=state.config.project.url,
             output_file=state.recording_file_path,
         )
 
-    state.messages.append(HumanMessage(prompts.codegen(state.current_recording_code)))
+    state.messages.append(HumanMessage(prompts.codegen(code)))
 
     console.print("✅ User input recorded successfully")
 

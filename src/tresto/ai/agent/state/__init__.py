@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from langchain.chat_models.base import BaseChatModel
-    from langchain_core.tools import Tool
+    from langchain_core.tools import BaseTool
 
 
 class Decision(StrEnum):
@@ -80,7 +80,7 @@ class TestAgentState(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def create_agent(self, task_message: str, tools: list[Tool] | None = None) -> Agent:
+    def create_agent(self, task_message: str, tools: list[BaseTool] | None = None) -> Agent:
         return Agent(
             state=self,
             llm=self.create_llm(tools=tools),
@@ -105,7 +105,7 @@ class TestAgentState(BaseModel):
         """Get the test database for persistent storage."""
         return TestDatabase(test_directory=self.config.project.test_directory, test_name=self.test_name)
 
-    def create_llm(self: TestAgentState, tools: list[Tool] | None = None) -> BaseChatModel:
+    def create_llm(self: TestAgentState, tools: list[BaseTool] | None = None) -> BaseChatModel:
         # Make it possible to pass custom options to the LLM
         options = self.config.ai.options or {}
 
@@ -118,7 +118,7 @@ class TestAgentState(BaseModel):
         ).bind_tools(tools or [])
 
     @property
-    def all_messages(self) -> list[BaseMessage]:
+    def all_messages(self) -> list[BaseMessage | dict[str, Any]]:
         """Get all messages including local messages for LLM context."""
         return self.messages + self.local_messages
 
