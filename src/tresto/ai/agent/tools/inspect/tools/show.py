@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from langchain.tools import Tool, tool
+from langchain.tools import BaseTool, tool
 from pydantic import BaseModel, Field, field_validator
 
 from tresto.ai.agent.tools.inspect.recording import RecordingManager
@@ -19,7 +19,7 @@ class ShowArgs(BaseModel):
         return v
 
 
-def create_bound_show_tool(manager: RecordingManager) -> Tool:
+def create_bound_show_tool(manager: RecordingManager) -> BaseTool:
     @tool(description="Show the HTML structure of the page", args_schema=ShowArgs)
     def show(depth: int = 2, timestamp: datetime | None = None) -> str:
         """Show the collapsed HTML structure of the page with the given depth."""

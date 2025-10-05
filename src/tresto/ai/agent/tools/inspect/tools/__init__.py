@@ -1,6 +1,6 @@
 """HTML inspection tools bound to a RecordingManager."""
 
-from langchain.tools import Tool
+from langchain.tools import BaseTool
 
 from tresto.ai.agent.tools.inspect.recording import RecordingManager
 
@@ -13,7 +13,7 @@ from .stats import create_bound_stats_tool
 from .text import create_bound_text_tool
 
 
-def create_bound_tools(manager: RecordingManager) -> list[Tool]:
+def create_bound_tools(manager: RecordingManager) -> list[BaseTool]:
     return [
         create_bound_attrs_tool(manager),
         create_bound_expand_tool(manager),

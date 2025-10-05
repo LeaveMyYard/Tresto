@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import yaml
 from langchain.chat_models import init_chat_model
@@ -70,8 +70,8 @@ class TestAgentState(BaseModel):
     config: TrestoConfig
 
     # Conversational context
-    messages: list[BaseMessage | dict] = []
-    local_messages: list[BaseMessage | dict] = []  # Temporary messages for tools
+    messages: list[BaseMessage | dict[str, Any]] = []
+    local_messages: list[BaseMessage | dict[str, Any]] = []  # Temporary messages for tools
 
     # Working artifacts
     last_run_result: TestRunResult | None = None
@@ -88,7 +88,7 @@ class TestAgentState(BaseModel):
             tools={tool.name: tool for tool in tools or []},
         )
 
-    def add_message(self, message: BaseMessage | dict) -> None:
+    def add_message(self, message: BaseMessage | dict[str, Any]) -> None:
         with open(self.config.project.test_directory / "debug.txt", "a") as f:
             f.write(f"{message}\n")
 
@@ -98,7 +98,7 @@ class TestAgentState(BaseModel):
         self.messages.append(message)
 
         with open(self.config.project.test_directory / "state.yaml", "w") as f:
-            yaml.dump(self.model_dump(mode="json", exclude=["last_run_result"]), f, indent=2)
+            yaml.dump(self.model_dump(mode="json", exclude={"last_run_result"}), f, indent=2)
 
     @property
     def test_database(self) -> TestDatabase:

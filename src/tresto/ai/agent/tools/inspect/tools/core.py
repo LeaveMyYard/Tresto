@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from bs4 import BeautifulSoup, NavigableString
+from bs4 import BeautifulSoup
+from bs4.element import NavigableString
 
 # Content size limits to prevent overwhelming the agent
 MAX_TEXT_LENGTH = 200  # For individual text nodes
@@ -99,7 +100,7 @@ def get_navigation_suggestions(soup: BeautifulSoup, failed_selector: str) -> str
 
     # Try to find common starting points
     body = soup.find("body")
-    if body:
+    if body and hasattr(body, "children"):
         # Get direct children of body with their attributes
         children = [child for child in body.children if hasattr(child, "name") and child.name]
         if children:

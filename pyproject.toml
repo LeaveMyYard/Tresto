@@ -132,4 +132,9 @@ python_functions = ["test_*"]
 addopts = "-v --tb=short"
 
 [dependency-groups]
-dev = ["mypy>=1.17.1", "ruff>=0.12.7", "types-toml>=0.10.8.20240310"]
+dev = [
+    "mypy>=1.17.1",
+    "ruff>=0.12.7",
+    "types-pyyaml>=6.0.12.20250822",
+    "types-toml>=0.10.8.20240310",
+]

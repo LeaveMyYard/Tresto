@@ -5,7 +5,7 @@ import json
 import zipfile
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from bs4 import BeautifulSoup
 
@@ -96,7 +96,7 @@ class RecordingManager:
                     return RecordingSources(html_snapshots=html_snapshots, screenshots=screenshots)
 
                 # Load all events from all .trace files
-                events: list[dict] = []
+                events: list[dict[str, Any]] = []
                 for tf in trace_files:
                     with zf.open(tf) as f:
                         data = f.read()
@@ -106,7 +106,7 @@ class RecordingManager:
                             if isinstance(obj, list):
                                 events.extend(obj)
                             elif isinstance(obj, dict) and "events" in obj:
-                                events.extend(obj["events"])  # type: ignore[index]
+                                events.extend(obj["events"])
                             else:
                                 # Maybe it's NDJSON lines
                                 raise ValueError("Unexpected JSON structure")
@@ -141,7 +141,7 @@ class RecordingManager:
                     return datetime.fromtimestamp(x, tz=UTC)
 
                 # Helper to choose the best wall clock timestamp for an event
-                def choose_event_dt(ev_obj: dict) -> datetime | None:
+                def choose_event_dt(ev_obj: dict[str, Any]) -> datetime | None:
                     # Prefer wall-clock times when available (epoch ms)
                     # Common fields in Playwright traces across event shapes
                     wall = (
@@ -294,12 +294,12 @@ class RecordingManager:
                 head = node[0]
                 if isinstance(head, str):
                     tag = head.lower()
-                    attrs: dict[str, object] = {}
-                    children: list[object] = []
+                    attrs: dict[str, Any] = {}
+                    children: list[Any] = []
                     # Optional attrs in second position
                     idx_after_attrs = 1
                     if len(node) > 1 and isinstance(node[1], dict):
-                        attrs = node[1]  # type: ignore[assignment]
+                        attrs = node[1]
                         idx_after_attrs = 2
                     # Children may be represented either as a single list at position 2,
                     # or as a sequence of child nodes spread across positions >= 2.
@@ -396,7 +396,7 @@ class RecordingManager:
 
         raise ValueError("No screenshot available for the requested timestamp")
 
-    def get_stats(self) -> dict:
+    def get_stats(self) -> dict[str, Any]:
         start, end = self.time_range
         return {
             "has_trace": self._trace_path is not None,

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from langchain.tools import Tool, tool
+from langchain.tools import BaseTool, tool
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
@@ -22,7 +22,7 @@ def _parse_iso_to_utc(value: str) -> datetime:
     return dt.astimezone(UTC)
 
 
-def create_bound_logs_tool(manager: RecordingManager) -> Tool:
+def create_bound_logs_tool(manager: RecordingManager) -> BaseTool:
     @tool(description="Get browser logs between start_time and end_time", args_schema=LogsArgs)
     def logs(start_time: str, end_time: str | None = None) -> str:
         try:
