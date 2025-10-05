@@ -1,6 +1,12 @@
 name: Publish to PyPI
 
 on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to publish (e.g., v1.0.3 or v1.0.3-rc1)'
+        required: true
+        type: string
   release:
     types: [published]
 
@@ -8,19 +14,20 @@ permissions:
   contents: read
 
 concurrency:
-  group: pypi-publish-${{ github.event.release.tag_name }}
+  group: pypi-publish-${{ inputs.tag || github.event.release.tag_name }}
   cancel-in-progress: false
 
 jobs:
   publish:
     name: Build and publish with uv
     runs-on: ubuntu-latest
-    if: ${{ startsWith(github.event.release.tag_name, 'v') }}
+    if: ${{ (github.event_name == 'workflow_dispatch' && startsWith(inputs.tag, 'v')) || (github.event_name == 'release' && startsWith(github.event.release.tag_name, 'v')) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ inputs.tag || github.event.release.tag_name }}
 
       - name: Set up Python 3.13
         uses: actions/setup-python@v5
@@ -34,7 +41,7 @@ jobs:
         id: version
         shell: bash
         env:
-          TAGNAME: ${{ github.event.release.tag_name }}
+          TAGNAME: ${{ inputs.tag || github.event.release.tag_name }}
         run: |
           set -euo pipefail
           TAG="${TAGNAME}"
