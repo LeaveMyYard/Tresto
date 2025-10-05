@@ -1,0 +1,70 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pypi-publish-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build and publish with uv
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(github.event.release.tag_name, 'v') }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Derive version from tag
+        id: version
+        shell: bash
+        env:
+          TAGNAME: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          TAG="${TAGNAME}"
+          TAG_NO_V="${TAG#v}"
+          # Normalize to PEP 440: convert hyphenated pre-release markers (e.g., -rc1) to rc1
+          VERSION_PEP440=$(printf '%s' "${TAG_NO_V}" | sed -E 's/-([A-Za-z0-9]+)/\1/g')
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION_PEP440}" >> "$GITHUB_OUTPUT"
+          echo "Using tag: ${TAG} -> version: ${VERSION_PEP440}"
+
+      - name: Update versions in pyproject.toml and src/tresto/__init__.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          V="${{ steps.version.outputs.version }}"
+          sed -i -E "s/^version = \".*\"/version = \"${V}\"/" pyproject.toml
+          sed -i -E "s/^__version__ = \".*\"/__version__ = \"${V}\"/" src/tresto/__init__.py
+          echo "Updated versions to ${V}"
+
+      - name: Build
+        run: uv build
+
+      - name: Publish to PyPI
+        env:
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          if [[ -z "${PYPI_API_TOKEN}" ]]; then
+            echo "PYPI_API_TOKEN secret is not set" >&2
+            exit 1
+          fi
+          uv publish --token "${PYPI_API_TOKEN}"
+
+
