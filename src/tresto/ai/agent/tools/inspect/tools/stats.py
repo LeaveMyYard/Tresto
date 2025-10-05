@@ -1,4 +1,4 @@
-from langchain.tools import tool, BaseTool
+from langchain.tools import BaseTool, tool
 
 from tresto.ai.agent.tools.inspect.recording import RecordingManager
 

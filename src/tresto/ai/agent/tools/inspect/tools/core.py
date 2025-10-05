@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup  # noqa: TC002
 from bs4.element import NavigableString
 
 # Content size limits to prevent overwhelming the agent
