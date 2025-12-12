@@ -38,7 +38,8 @@ def test_tresto_test_create_creates_file_structure(e2e_test_dir: Path) -> None:
         cwd=e2e_test_dir,
         input_text=input_text_init,
     )
-    assert result_init.returncode == 0, f"Init failed: {result_init.stderr}"
+    assert result_init.returncode == 0, f"Init failed. Stderr: {result_init.stderr}"
+    assert not result_init.stderr, f"Init should not have errors. Got stderr: {result_init.stderr}"
 
     test_name = "auth.login"
     test_description = "Test user login with valid credentials"
@@ -74,7 +75,8 @@ def test_tresto_test_create_accepts_description_input(e2e_test_dir: Path) -> Non
         cwd=e2e_test_dir,
         input_text=input_text_init,
     )
-    assert result_init.returncode == 0
+    assert result_init.returncode == 0, f"Init failed. Stderr: {result_init.stderr}"
+    assert not result_init.stderr, f"Init should not have errors. Got stderr: {result_init.stderr}"
 
     test_description = "Verify user can successfully complete checkout"
 
@@ -103,6 +105,7 @@ def test_tresto_test_create_fails_on_duplicate(e2e_test_dir: Path) -> None:
         input_text=input_text_init,
     )
     assert result_init.returncode == 0, f"Init should succeed. Stderr: {result_init.stderr}"
+    assert not result_init.stderr, f"Init should not have errors. Got stderr: {result_init.stderr}"
 
     test_name = "duplicate_test"
 
@@ -135,7 +138,8 @@ def test_tresto_test_create_interactive_mode(e2e_test_dir: Path) -> None:
         cwd=e2e_test_dir,
         input_text=input_text_init,
     )
-    assert result_init.returncode == 0, f"Init failed: {result_init.stderr}"
+    assert result_init.returncode == 0, f"Init failed. Stderr: {result_init.stderr}"
+    assert not result_init.stderr, f"Init should not have errors. Got stderr: {result_init.stderr}"
 
     test_name = "interactive"
     test_description = "Test created interactively"

@@ -22,7 +22,8 @@ def test_tresto_init_creates_required_files(e2e_test_dir: Path, monkeypatch: Any
         input_text=input_text,
     )
 
-    assert result.returncode == 0, f"Command failed with stderr: {result.stderr}\nstdout: {result.stdout}"
+    assert result.returncode == 0, f"Command failed. Stderr: {result.stderr}\nStdout: {result.stdout}"
+    assert not result.stderr, f"Should not have errors. Got stderr: {result.stderr}"
 
     config_file = e2e_test_dir / "tresto.yaml"
     assert config_file.exists(), "tresto.yaml was not created"
@@ -57,7 +58,8 @@ def test_tresto_init_with_defaults(e2e_test_dir: Path, monkeypatch: Any) -> None
         input_text=input_text,
     )
 
-    assert result.returncode == 0, f"Init command failed: {result.stderr}\nstdout: {result.stdout}"
+    assert result.returncode == 0, f"Init failed. Stderr: {result.stderr}\nStdout: {result.stdout}"
+    assert not result.stderr, f"Should not have errors. Got stderr: {result.stderr}"
 
     config_file = e2e_test_dir / "tresto.yaml"
     config_content = config_file.read_text(encoding="utf-8")
@@ -92,7 +94,8 @@ def test_tresto_init_with_custom_project_settings(
         input_text=input_text,
     )
 
-    assert result.returncode == 0, f"Init failed: {result.stderr}\nstdout: {result.stdout}"
+    assert result.returncode == 0, f"Init failed. Stderr: {result.stderr}\nStdout: {result.stdout}"
+    assert not result.stderr, f"Should not have errors. Got stderr: {result.stderr}"
 
     config_file = e2e_test_dir / "tresto.yaml"
     config_content = config_file.read_text(encoding="utf-8")
@@ -128,7 +131,8 @@ def test_tresto_init_with_different_connectors(
         input_text=input_text,
     )
 
-    assert result.returncode == 0, f"Init failed: {result.stderr}\nstdout: {result.stdout}"
+    assert result.returncode == 0, f"Init failed. Stderr: {result.stderr}\nStdout: {result.stdout}"
+    assert not result.stderr, f"Should not have errors. Got stderr: {result.stderr}"
 
     config_file = e2e_test_dir / "tresto.yaml"
     config_content = config_file.read_text(encoding="utf-8")
@@ -160,7 +164,8 @@ def test_tresto_init_creates_nested_directories(
         input_text=input_text,
     )
 
-    assert result.returncode == 0, f"Init failed: {result.stderr}\nstdout: {result.stdout}"
+    assert result.returncode == 0, f"Init failed. Stderr: {result.stderr}\nStdout: {result.stdout}"
+    assert not result.stderr, f"Should not have errors. Got stderr: {result.stderr}"
 
     test_dir = e2e_test_dir / test_directory.lstrip("./")
     assert test_dir.exists(), f"Directory {test_directory} was not created"
@@ -187,7 +192,8 @@ def test_tresto_init_overwrite_with_force(
         input_text=input_text,
     )
 
-    assert result1.returncode == 0
+    assert result1.returncode == 0, f"First init failed. Stderr: {result1.stderr}"
+    assert not result1.stderr, f"Should not have errors. Got stderr: {result1.stderr}"
 
     config_file = e2e_test_dir / "tresto.yaml"
     original_content = config_file.read_text(encoding="utf-8")
@@ -200,7 +206,8 @@ def test_tresto_init_overwrite_with_force(
         input_text=input_text2,
     )
 
-    assert result2.returncode == 0
+    assert result2.returncode == 0, f"Second init failed. Stderr: {result2.stderr}"
+    assert not result2.stderr, f"Should not have errors. Got stderr: {result2.stderr}"
 
     new_content = config_file.read_text(encoding="utf-8")
     assert new_content != original_content
@@ -222,7 +229,8 @@ def test_tresto_init_without_force_aborts_on_existing_config(
         input_text=input_text,
     )
 
-    assert result1.returncode == 0
+    assert result1.returncode == 0, f"Init failed. Stderr: {result1.stderr}"
+    assert not result1.stderr, f"Should not have errors. Got stderr: {result1.stderr}"
 
     config_file = e2e_test_dir / "tresto.yaml"
     original_content = config_file.read_text(encoding="utf-8")
@@ -238,7 +246,7 @@ def test_tresto_init_without_force_aborts_on_existing_config(
         input_text=input_text_decline,
     )
 
-    assert "cancelled" in result2.stdout.lower(), "Expected cancellation message"
+    assert "cancelled" in result2.stdout.lower(), f"Expected cancellation message. Got: {result2.stdout}"
 
     new_content = config_file.read_text(encoding="utf-8")
     assert new_content == original_content, "Config should not have changed"
@@ -257,7 +265,8 @@ def test_tresto_init_without_force_succeeds_on_confirmation(
         input_text=input_text,
     )
 
-    assert result1.returncode == 0
+    assert result1.returncode == 0, f"First init failed. Stderr: {result1.stderr}"
+    assert not result1.stderr, f"Should not have errors. Got stderr: {result1.stderr}"
 
     config_file = e2e_test_dir / "tresto.yaml"
     original_content = config_file.read_text(encoding="utf-8")
@@ -273,7 +282,8 @@ def test_tresto_init_without_force_succeeds_on_confirmation(
         input_text=input_text_accept,
     )
 
-    assert result2.returncode == 0, f"Init should succeed with confirmation: {result2.stderr}\nstdout: {result2.stdout}"
+    assert result2.returncode == 0, f"Second init should succeed. Stderr: {result2.stderr}\nStdout: {result2.stdout}"
+    assert not result2.stderr, f"Should not have errors. Got stderr: {result2.stderr}"
 
     new_content = config_file.read_text(encoding="utf-8")
     assert new_content != original_content, "Config should have changed"
