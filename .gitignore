@@ -214,6 +214,7 @@ node_modules/
 .trestorc
 tests/generated/
 *.log
+tmp/
 
 # Playwright
 test-results/
