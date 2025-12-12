@@ -1,18 +1,22 @@
-"""End-to-end tests for `tresto test create` command.
-
-Note: Full test create workflow requires Playwright codegen and a display server.
-These tests verify CLI behavior up to the point where Playwright would launch.
-Full integration tests with Playwright require a proper X11/display environment.
-"""
+"""End-to-end tests for `tresto test create` command."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .utils import run_tresto_command
+from .utils import mock_playwright, run_tresto_command
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+
+MOCK_PLAYWRIGHT_RECORDING = '''from playwright.async_api import Page
+
+async def test_example(page: Page):
+    """Generated test code."""
+    await page.goto("http://localhost:3000")
+    await page.click("button")
+'''
 
 
 def test_tresto_test_create_requires_config(e2e_test_dir: Path) -> None:

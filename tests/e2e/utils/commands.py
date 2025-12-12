@@ -1,7 +1,8 @@
-"""Utilities for E2E tests."""
+"""Command execution utilities for E2E tests."""
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -20,20 +21,29 @@ def run_tresto_command(
     Args:
         cmd: Command and arguments to run (e.g., ["tresto", "init"])
         cwd: Working directory to run the command in
-        env: Optional environment variables
+        env: Optional environment variables (PATH will be prepended, not replaced)
         input_text: Optional text to provide as stdin input
         timeout: Timeout in seconds (default: 30)
 
     Returns:
         CompletedProcess with stdout, stderr, and returncode
     """
-    project_root = Path(__file__).resolve().parents[2]
+    project_root = Path(__file__).resolve().parents[3]
 
+    custom_path = (env or {}).get("PATH", "")
+    system_path = os.environ.get("PATH", "")
+    
     full_env = {
-        "PYTHONPATH": str(project_root / "src"),
-        "PATH": str(project_root / "src") + ":" + (env or {}).get("PATH", ""),
-        **(env or {}),
+        **os.environ,
     }
+    
+    if env:
+        for key, value in env.items():
+            if key != "PATH":
+                full_env[key] = value
+    
+    full_env["PYTHONPATH"] = str(project_root / "src")
+    full_env["PATH"] = f"{custom_path}{str(project_root / 'src')}:{system_path}"
 
     python_exe = sys.executable
 
@@ -59,3 +69,4 @@ def run_tresto_command(
         f.write(process.stderr)
 
     return process
+
