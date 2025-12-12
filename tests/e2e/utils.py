@@ -12,6 +12,7 @@ def run_tresto_command(
     cwd: Path,
     env: dict[str, str] | None = None,
     input_text: str | None = None,
+    timeout: int = 30,
 ) -> subprocess.CompletedProcess[str]:
     """
     Run a tresto CLI command in a subprocess.
@@ -21,6 +22,7 @@ def run_tresto_command(
         cwd: Working directory to run the command in
         env: Optional environment variables
         input_text: Optional text to provide as stdin input
+        timeout: Timeout in seconds (default: 30)
 
     Returns:
         CompletedProcess with stdout, stderr, and returncode
@@ -45,6 +47,6 @@ def run_tresto_command(
         text=True,
         input=input_text,
         env=full_env,
-        timeout=30,
+        timeout=timeout,
     )
 
