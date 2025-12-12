@@ -5,8 +5,12 @@ from __future__ import annotations
 import hashlib
 import shutil
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 __all__ = ["e2e_test_dir"]
 
@@ -19,7 +23,7 @@ def get_test_run_hash() -> str:
 
 
 @pytest.fixture
-def e2e_test_dir(tmp_path: Path) -> Path:
+def e2e_test_dir(tmp_path: Path) -> Iterator[Path]:
     """Create a temporary directory for E2E tests with the test_project copied."""
     project_root = Path(__file__).resolve().parents[2]
     test_project_src = project_root / "test_project"

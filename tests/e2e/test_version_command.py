@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING
 
 from .utils import run_tresto_command
@@ -17,9 +18,14 @@ def test_tresto_version_shows_version(e2e_test_dir: Path) -> None:
         cwd=e2e_test_dir,
     )
 
-    assert result.returncode == 0, f"Version command should succeed: {result.stderr}"
-    assert "tresto" in result.stdout.lower(), "Should mention Tresto"
-    assert "v" in result.stdout.lower() or "version" in result.stdout.lower()
+    assert result.returncode == 0, f"Version command should succeed. Stderr: {result.stderr}"
+    assert not result.stderr, f"Should not have errors. Got stderr: {result.stderr}"
+    
+    stdout_lower = result.stdout.lower()
+    assert "tresto" in stdout_lower, f"Should mention Tresto. Got: {result.stdout}"
+    
+    assert re.search(r"v?\d+\.\d+\.\d+", result.stdout), \
+        f"Should show version number format (e.g., v0.3.1 or 0.3.1). Got: {result.stdout}"
 
 
 def test_tresto_version_flag(e2e_test_dir: Path) -> None:
@@ -29,8 +35,13 @@ def test_tresto_version_flag(e2e_test_dir: Path) -> None:
         cwd=e2e_test_dir,
     )
 
-    assert result.returncode == 0, f"Version flag should succeed: {result.stderr}"
-    assert "tresto" in result.stdout.lower()
+    assert result.returncode == 0, f"Version flag should succeed. Stderr: {result.stderr}"
+    assert not result.stderr, f"Should not have errors. Got stderr: {result.stderr}"
+    
+    stdout_lower = result.stdout.lower()
+    assert "tresto" in stdout_lower, f"Should mention Tresto. Got: {result.stdout}"
+    assert re.search(r"v?\d+\.\d+\.\d+", result.stdout), \
+        f"Should show version number. Got: {result.stdout}"
 
 
 def test_tresto_version_short_flag(e2e_test_dir: Path) -> None:
@@ -40,6 +51,11 @@ def test_tresto_version_short_flag(e2e_test_dir: Path) -> None:
         cwd=e2e_test_dir,
     )
 
-    assert result.returncode == 0, f"Short version flag should succeed: {result.stderr}"
-    assert "tresto" in result.stdout.lower()
+    assert result.returncode == 0, f"Short version flag should succeed. Stderr: {result.stderr}"
+    assert not result.stderr, f"Should not have errors. Got stderr: {result.stderr}"
+    
+    stdout_lower = result.stdout.lower()
+    assert "tresto" in stdout_lower, f"Should mention Tresto. Got: {result.stdout}"
+    assert re.search(r"v?\d+\.\d+\.\d+", result.stdout), \
+        f"Should show version number. Got: {result.stdout}"
 

@@ -23,8 +23,11 @@ def test_tresto_test_create_requires_config(e2e_test_dir: Path) -> None:
         input_text="Test login functionality\n",
     )
 
-    assert result.returncode != 0, "Should fail without config"
-    assert "tresto.yaml" in result.stdout.lower() or "config" in result.stdout.lower()
+    assert result.returncode != 0, f"Should fail without config. Got returncode: {result.returncode}"
+    
+    output = (result.stdout + result.stderr).lower()
+    assert "tresto.yaml" in output or "config" in output, \
+        f"Should mention config file. Got stdout: {result.stdout}, stderr: {result.stderr}"
 
 
 def test_tresto_test_create_creates_file_structure(e2e_test_dir: Path) -> None:
@@ -85,9 +88,10 @@ def test_tresto_test_create_accepts_description_input(e2e_test_dir: Path) -> Non
     )
 
     test_file = e2e_test_dir / "tresto" / "tests" / "test_checkout.py"
-    if test_file.exists():
-        content = test_file.read_text(encoding="utf-8")
-        assert test_description in content
+    assert test_file.exists(), f"Test file should be created at {test_file}"
+
+    content = test_file.read_text(encoding="utf-8")
+    assert test_description in content, f"Test description should be in file header"
 
 
 def test_tresto_test_create_fails_on_duplicate(e2e_test_dir: Path) -> None:
@@ -98,7 +102,7 @@ def test_tresto_test_create_fails_on_duplicate(e2e_test_dir: Path) -> None:
         cwd=e2e_test_dir,
         input_text=input_text_init,
     )
-    assert result_init.returncode == 0
+    assert result_init.returncode == 0, f"Init should succeed. Stderr: {result_init.stderr}"
 
     test_name = "duplicate_test"
 
@@ -116,8 +120,11 @@ def test_tresto_test_create_fails_on_duplicate(e2e_test_dir: Path) -> None:
         timeout=10,
     )
 
-    assert result.returncode != 0, "Second create should fail"
-    assert "already exists" in result.stdout.lower() or "iterate" in result.stdout.lower()
+    assert result.returncode != 0, f"Second create should fail. Got returncode: {result.returncode}"
+    
+    output = (result.stdout + result.stderr).lower()
+    assert "already exists" in output or "iterate" in output, \
+        f"Should mention file exists or suggest iterate. Got stdout: {result.stdout}, stderr: {result.stderr}"
 
 
 def test_tresto_test_create_interactive_mode(e2e_test_dir: Path) -> None:
@@ -128,7 +135,7 @@ def test_tresto_test_create_interactive_mode(e2e_test_dir: Path) -> None:
         cwd=e2e_test_dir,
         input_text=input_text_init,
     )
-    assert result_init.returncode == 0
+    assert result_init.returncode == 0, f"Init failed: {result_init.stderr}"
 
     test_name = "interactive"
     test_description = "Test created interactively"
@@ -141,8 +148,18 @@ def test_tresto_test_create_interactive_mode(e2e_test_dir: Path) -> None:
         timeout=10,
     )
 
-    assert "Enter the test name" in result.stdout or "test name" in result.stdout.lower()
-    assert "Describe what this test should do" in result.stdout or "test description" in result.stdout.lower()
+    stdout_lower = result.stdout.lower()
+    assert "enter the test name" in stdout_lower or "test name" in stdout_lower, \
+        f"Should prompt for test name. Got: {result.stdout}"
+    assert "describe what this test should do" in stdout_lower or "test description" in stdout_lower, \
+        f"Should prompt for description. Got: {result.stdout}"
+    
+    test_file = e2e_test_dir / "tresto" / "tests" / f"test_{test_name}.py"
+    assert test_file.exists(), f"Test file should be created at {test_file}. Stderr: {result.stderr}"
+    
+    content = test_file.read_text(encoding="utf-8")
+    assert test_name in content, f"Test name should be in file. Got: {content}"
+    assert test_description in content, f"Test description should be in file. Got: {content}"
 
 
 

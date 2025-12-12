@@ -40,7 +40,7 @@ def run_tresto_command(
     if cmd[0] == "tresto":
         cmd = [python_exe, "-m", "tresto"] + cmd[1:]
 
-    return subprocess.run(
+    process = subprocess.run(
         cmd,
         cwd=cwd,
         capture_output=True,
@@ -50,3 +50,12 @@ def run_tresto_command(
         timeout=timeout,
     )
 
+    # Save stdout and stderr to files in .logs
+    logs_dir = cwd / ".logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    with open(logs_dir / "stdout.txt", "w") as f:
+        f.write(process.stdout)
+    with open(logs_dir / "stderr.txt", "w") as f:
+        f.write(process.stderr)
+
+    return process
