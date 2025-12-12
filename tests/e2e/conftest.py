@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import shutil
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -17,19 +18,20 @@ __all__ = ["e2e_test_dir"]
 
 def get_test_run_hash() -> str:
     """Generate a unique hash for this test run."""
-    import time
 
     return hashlib.md5(f"{time.time()}".encode()).hexdigest()[:8]
 
 
-@pytest.fixture
-def e2e_test_dir(tmp_path: Path) -> Iterator[Path]:
+@pytest.fixture(autouse=False)
+def e2e_test_dir(tmp_path: Path, request: pytest.FixtureRequest) -> Iterator[Path]:
     """Create a temporary directory for E2E tests with the test_project copied."""
     project_root = Path(__file__).resolve().parents[2]
     test_project_src = project_root / "test_project"
 
     test_run_hash = get_test_run_hash()
-    tmp_dir = project_root / "tmp" / test_run_hash
+    test_name = request.node.name
+
+    tmp_dir = project_root / "tmp" / f"{test_name}_{test_run_hash}"
     tmp_dir.mkdir(parents=True, exist_ok=True)
 
     test_project_dest = tmp_dir / "test_project"
@@ -48,4 +50,4 @@ def e2e_test_dir(tmp_path: Path) -> Iterator[Path]:
 
     yield test_project_dest
 
-    shutil.rmtree(tmp_dir, ignore_errors=True)
+    # shutil.rmtree(tmp_dir, ignore_errors=True)
