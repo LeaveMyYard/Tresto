@@ -37,6 +37,11 @@ def e2e_test_dir(tmp_path: Path) -> Path:
         dirs_exist_ok=True,
     )
 
+    node_modules_src = test_project_src / "node_modules"
+    if node_modules_src.exists():
+        node_modules_dest = test_project_dest / "node_modules"
+        node_modules_dest.symlink_to(node_modules_src, target_is_directory=True)
+
     yield test_project_dest
 
     shutil.rmtree(tmp_dir, ignore_errors=True)
