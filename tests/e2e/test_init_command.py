@@ -14,14 +14,11 @@ if TYPE_CHECKING:
 
 def test_tresto_init_creates_required_files(e2e_test_dir: Path, monkeypatch: Any) -> None:
     """Test that `tresto init` creates tresto.yaml and test directory structure."""
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-12345")
-
-    input_text = "\n\n\n\n\n"
+    input_text = "\n\n\ntest\n\n"
 
     result = run_tresto_command(
         ["tresto", "init", "--force"],
         cwd=e2e_test_dir,
-        env={"ANTHROPIC_API_KEY": "test-key-12345"},
         input_text=input_text,
     )
 
@@ -52,14 +49,11 @@ def test_tresto_init_creates_required_files(e2e_test_dir: Path, monkeypatch: Any
 
 def test_tresto_init_with_defaults(e2e_test_dir: Path, monkeypatch: Any) -> None:
     """Test that `tresto init --force` uses default values successfully."""
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-12345")
-
-    input_text = "\n\n\n\n\n"
+    input_text = "\n\n\ntest\n\n"
 
     result = run_tresto_command(
         ["tresto", "init", "--force"],
         cwd=e2e_test_dir,
-        env={"ANTHROPIC_API_KEY": "test-key-12345"},
         input_text=input_text,
     )
 
@@ -68,8 +62,8 @@ def test_tresto_init_with_defaults(e2e_test_dir: Path, monkeypatch: Any) -> None
     config_file = e2e_test_dir / "tresto.yaml"
     config_content = config_file.read_text(encoding="utf-8")
 
-    assert "connector: anthropic" in config_content
-    assert "claude" in config_content.lower()
+    assert "connector: test" in config_content
+    assert "test-model" in config_content.lower()
     assert "./tresto/tests" in config_content or "tresto/tests" in config_content
 
 
@@ -90,14 +84,11 @@ def test_tresto_init_with_custom_project_settings(
     test_directory: str,
 ) -> None:
     """Test that `tresto init` correctly saves custom project settings."""
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-12345")
-
-    input_text = f"{project_name}\n{base_url}\n{test_directory}\n\n\n"
+    input_text = f"{project_name}\n{base_url}\n{test_directory}\ntest\n\n"
 
     result = run_tresto_command(
         ["tresto", "init", "--force"],
         cwd=e2e_test_dir,
-        env={"ANTHROPIC_API_KEY": "test-key-12345"},
         input_text=input_text,
     )
 
@@ -118,10 +109,8 @@ def test_tresto_init_with_custom_project_settings(
 @pytest.mark.parametrize(
     ("connector", "expected_model_prefix"),
     [
-        ("anthropic", "claude"),
-        ("claude", "claude"),
-        ("openai", "gpt"),
-        ("gpt", "gpt"),
+        ("test", "test"),
+        ("mock", "test"),
     ],
 )
 def test_tresto_init_with_different_connectors(
@@ -131,18 +120,11 @@ def test_tresto_init_with_different_connectors(
     expected_model_prefix: str,
 ) -> None:
     """Test that `tresto init` works with different AI connectors."""
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-12345")
-    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
-
     input_text = f"\n\n\n{connector}\n\n"
 
     result = run_tresto_command(
         ["tresto", "init", "--force"],
         cwd=e2e_test_dir,
-        env={
-            "ANTHROPIC_API_KEY": "test-key-12345",
-            "OPENAI_API_KEY": "test-openai-key",
-        },
         input_text=input_text,
     )
 
@@ -170,14 +152,11 @@ def test_tresto_init_creates_nested_directories(
     test_directory: str,
 ) -> None:
     """Test that `tresto init` creates nested test directories correctly."""
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-12345")
-
-    input_text = f"\n\n{test_directory}\n\n\n"
+    input_text = f"\n\n{test_directory}\ntest\n\n"
 
     result = run_tresto_command(
         ["tresto", "init", "--force"],
         cwd=e2e_test_dir,
-        env={"ANTHROPIC_API_KEY": "test-key-12345"},
         input_text=input_text,
     )
 
@@ -200,14 +179,11 @@ def test_tresto_init_overwrite_with_force(
     monkeypatch: Any,
 ) -> None:
     """Test that `tresto init --force` overwrites existing config."""
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-12345")
-
-    input_text = "\n\n\n\n\n"
+    input_text = "\n\n\ntest\n\n"
 
     result1 = run_tresto_command(
         ["tresto", "init", "--force"],
         cwd=e2e_test_dir,
-        env={"ANTHROPIC_API_KEY": "test-key-12345"},
         input_text=input_text,
     )
 
@@ -216,12 +192,11 @@ def test_tresto_init_overwrite_with_force(
     config_file = e2e_test_dir / "tresto.yaml"
     original_content = config_file.read_text(encoding="utf-8")
 
-    input_text2 = "different-project\nhttp://localhost:9999\n./other/tests\n\n\n"
+    input_text2 = "different-project\nhttp://localhost:9999\n./other/tests\ntest\n\n"
 
     result2 = run_tresto_command(
         ["tresto", "init", "--force"],
         cwd=e2e_test_dir,
-        env={"ANTHROPIC_API_KEY": "test-key-12345"},
         input_text=input_text2,
     )
 
@@ -239,14 +214,11 @@ def test_tresto_init_without_force_aborts_on_existing_config(
     monkeypatch: Any,
 ) -> None:
     """Test that `tresto init` without --force aborts when user declines overwrite."""
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-12345")
-
-    input_text = "\n\n\n\n\n"
+    input_text = "\n\n\ntest\n\n"
 
     result1 = run_tresto_command(
         ["tresto", "init", "--force"],
         cwd=e2e_test_dir,
-        env={"ANTHROPIC_API_KEY": "test-key-12345"},
         input_text=input_text,
     )
 
@@ -263,7 +235,6 @@ def test_tresto_init_without_force_aborts_on_existing_config(
     result2 = run_tresto_command(
         ["tresto", "init"],
         cwd=e2e_test_dir,
-        env={"ANTHROPIC_API_KEY": "test-key-12345"},
         input_text=input_text_decline,
     )
 
@@ -278,14 +249,11 @@ def test_tresto_init_without_force_succeeds_on_confirmation(
     monkeypatch: Any,
 ) -> None:
     """Test that `tresto init` without --force succeeds when user confirms overwrite."""
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-12345")
-
-    input_text = "\n\n\n\n\n"
+    input_text = "\n\n\ntest\n\n"
 
     result1 = run_tresto_command(
         ["tresto", "init", "--force"],
         cwd=e2e_test_dir,
-        env={"ANTHROPIC_API_KEY": "test-key-12345"},
         input_text=input_text,
     )
 
@@ -297,12 +265,11 @@ def test_tresto_init_without_force_succeeds_on_confirmation(
     trestorc_file = e2e_test_dir / ".trestorc"
     trestorc_file.write_text(original_content, encoding="utf-8")
 
-    input_text_accept = "y\ndifferent-project\nhttp://localhost:9999\n./other/tests\n\n\n"
+    input_text_accept = "y\ndifferent-project\nhttp://localhost:9999\n./other/tests\ntest\n\n"
 
     result2 = run_tresto_command(
         ["tresto", "init"],
         cwd=e2e_test_dir,
-        env={"ANTHROPIC_API_KEY": "test-key-12345"},
         input_text=input_text_accept,
     )
 

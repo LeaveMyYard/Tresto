@@ -9,6 +9,7 @@ from rich.console import Console
 
 from .anthropic.connector import AnthropicConnector
 from .openai.connector import OpenAIConnector
+from .test.connector import TestConnector
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -23,6 +24,8 @@ CONNECTOR_REGISTRY: dict[str, type[AIConnector]] = {
     "claude": AnthropicConnector,  # Alias
     "openai": OpenAIConnector,
     "gpt": OpenAIConnector,  # Alias
+    "test": TestConnector,
+    "mock": TestConnector,  # Alias
 }
 
 
