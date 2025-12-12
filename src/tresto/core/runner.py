@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, ValidationError
@@ -98,9 +99,11 @@ class TrestoRunner(BaseModel):
         else:
             self._pathfinder.test_file_path.parent.mkdir(parents=True, exist_ok=True)
 
-            # To make the new structure correct for pytest, we need to add __init__.py to all subfolders
-            for path in self._pathfinder.test_module_relative_path.parent.rglob("__init__.py"):
-                (self._pathfinder.tresto_root / path).touch()
+            current_path = self._pathfinder.test_module_relative_path.parent
+            while current_path != Path("."):
+                init_file = self._pathfinder.tresto_root / current_path / "__init__.py"
+                init_file.touch(exist_ok=True)
+                current_path = current_path.parent
 
             self._pathfinder.test_file_path.touch()
 
