@@ -93,6 +93,6 @@ def test_tresto_models_list_shows_all_connector_models(e2e_test_dir: Path) -> No
     has_claude = "claude-3" in stdout_lower or "claude" in stdout_lower
     assert has_claude, f"Should show Claude models. Got: {result.stdout}"
     
-    has_gpt = "gpt-4" in stdout_lower or "gpt-3" in stdout_lower
-    assert has_gpt, f"Should show GPT models. Got: {result.stdout}"
-
+    assert "gpt-5.3-codex" in stdout_lower, f"Should show Codex models through OpenAI. Got: {result.stdout}"
+    has_gpt = "gpt-4" in stdout_lower or "gpt-3" in stdout_lower or "gpt-5" in stdout_lower
+    assert has_gpt, f"Should show GPT/OpenAI models. Got: {result.stdout}"

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .utils import mock_playwright, run_tresto_command
+from .utils import run_tresto_command
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -50,7 +50,7 @@ def test_tresto_test_create_creates_file_structure(e2e_test_dir: Path) -> None:
 
     input_text_create = f"{test_description}\n"
 
-    result = run_tresto_command(
+    run_tresto_command(
         ["tresto", "test", "create", "--test-name", test_name],
         cwd=e2e_test_dir,
         input_text=input_text_create,
@@ -65,7 +65,7 @@ def test_tresto_test_create_creates_file_structure(e2e_test_dir: Path) -> None:
     content = test_file.read_text(encoding="utf-8")
     
     assert test_name in content, f"Test name '{test_name}' should be in file header"
-    assert test_description in content, f"Test description should be in file header"
+    assert test_description in content, "Test description should be in file header"
     
     assert "test name:" in content.lower(), "Header should contain test name field"
     assert "test description:" in content.lower(), "Header should contain test description field"
@@ -86,7 +86,7 @@ def test_tresto_test_create_accepts_description_input(e2e_test_dir: Path) -> Non
 
     input_text_create = f"{test_description}\n"
 
-    result = run_tresto_command(
+    run_tresto_command(
         ["tresto", "test", "create", "--test-name", "checkout"],
         cwd=e2e_test_dir,
         input_text=input_text_create,
@@ -97,7 +97,7 @@ def test_tresto_test_create_accepts_description_input(e2e_test_dir: Path) -> Non
     assert test_file.exists(), f"Test file should be created at {test_file}"
 
     content = test_file.read_text(encoding="utf-8")
-    assert test_description in content, f"Test description should be in file header"
+    assert test_description in content, "Test description should be in file header"
 
 
 def test_tresto_test_create_fails_on_duplicate(e2e_test_dir: Path) -> None:
@@ -168,6 +168,4 @@ def test_tresto_test_create_interactive_mode(e2e_test_dir: Path) -> None:
     content = test_file.read_text(encoding="utf-8")
     assert test_name in content, f"Test name should be in file. Got: {content}"
     assert test_description in content, f"Test description should be in file. Got: {content}"
-
-
 

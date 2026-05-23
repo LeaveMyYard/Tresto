@@ -35,7 +35,7 @@ Thank you for your interest in contributing to Tresto! We welcome contributions 
 
 5. **Set up environment variables**
    ```bash
-   export ANTHROPIC_API_KEY=your_api_key_here
+   export OPENAI_API_KEY=your_api_key_here
    ```
 
 ## 🧪 Running Tests

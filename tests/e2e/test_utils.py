@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import subprocess
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .utils import mock_playwright
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def test_mock_playwright_creates_executable(tmp_path: Path) -> None:
@@ -139,4 +142,3 @@ def test_mock_playwright_in_path_env(tmp_path: Path) -> None:
         assert result.returncode == 0, f"Should find playwright in PATH. Stderr: {result.stderr}"
         assert output_file.exists()
         assert output_file.read_text(encoding="utf-8") == expected_output
-

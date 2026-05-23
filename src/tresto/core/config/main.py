@@ -8,7 +8,7 @@ from typing import Any, Self
 
 import typer
 import yaml
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from rich.console import Console
 
 console = Console()
@@ -26,7 +26,7 @@ class BrowserConfig(BaseModel):
 
     headless: bool | None = None
     timeout: int | None = None
-    viewport: ViewportConfig
+    viewport: ViewportConfig = Field(default_factory=ViewportConfig)
 
     @classmethod
     def default(cls) -> Self:
@@ -83,8 +83,8 @@ class TrestoConfig(BaseModel):
 
     project: ProjectConfig
     ai: AIConfig
-    browser: BrowserConfig | None = None
-    recording: RecordingConfig | None = None
+    browser: BrowserConfig | None = Field(default_factory=BrowserConfig.default)
+    recording: RecordingConfig | None = Field(default_factory=RecordingConfig.default)
     verbose: bool = True  # Show detailed code generation by default
     secrets: list[str] = []
 

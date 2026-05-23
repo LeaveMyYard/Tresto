@@ -1,6 +1,6 @@
 # Tresto 🎭🤖
 
-## Status: Pre-Release
+## Status: v1
 
 Turbocharge your testing with AI. Tresto pairs Playwright codegen with an agent that understands your intent and iterates toward robust, stable tests.
 
@@ -23,7 +23,7 @@ Convert manual checks into reliable automated E2E in minutes—no boilerplate, n
 - **🎯 Smart test generation**: Natural-language to runnable Playwright tests
 - **🎭 Playwright integration**: Uses the Playwright Python stack
 - **🤖 Agentic workflow**: Generate → run → analyze → iterate
-- **🧠 Multi-provider AI**: Anthropic Claude and others via connectors
+- **🧠 OpenAI-first AI**: OpenAI API models by default, including Codex coding models
 - **⚙️ YAML config**: Single `tresto.yaml` at your project root
 - **🧪 Pytest-native**: Tests are discoverable and runnable with pytest
 
@@ -75,10 +75,10 @@ tresto test run
 
 ## 📋 Requirements
 
-- Python 3.11+ (3.13 preferred)
+- Python 3.13+
 - Playwright browsers (`playwright install`)
 - API key(s) for your selected AI provider(s)
-  - For Anthropic set `ANTHROPIC_API_KEY`
+  - For the default OpenAI provider set `OPENAI_API_KEY`
 
 ## 🛠️ Configuration (tresto.yaml)
 
@@ -91,8 +91,8 @@ project:
   test_directory: ./tresto/tests
 
 ai:
-  connector: anthropic
-  model: claude-3-5-sonnet-20241022
+  connector: openai
+  model: gpt-5.3-codex
   max_iterations: 5
   temperature: 0.1
 
@@ -109,19 +109,21 @@ recording:
   generate_selectors: auto
 
 secrets:
-  - ANTHROPIC_API_KEY
+  - ADMIN_EMAIL
+  - ADMIN_PASSWORD
 ```
 
 Notes:
 
-- `secrets` is a list of environment variable names. They must be present in your environment; they are validated at startup.
+- `OPENAI_API_KEY` configures the default model provider. Do not add it to `secrets`.
+- `secrets` is a list of application/test secret environment variable names exposed to generated tests through `tresto.secrets`.
 - `connector` and `model` must be one of the values exposed by `tresto models list`.
 
 ## 📖 CLI Commands
 
 - **`tresto`**: Shows a welcome panel and quick tips
 - **`tresto init`**: Interactive setup; creates `tresto.yaml` and scaffolds tests
-  - Options: `--force`, `--template <name>`
+  - Options: `--force`
 - **`tresto models list`**: List available AI connectors and their models
 - **`tresto test`**: Alias for running tests (equivalent to `tresto test run`)
 - **`tresto test run [PYTEST_ARGS...]`**: Run tests via pytest, forwards extra args
@@ -130,10 +132,10 @@ Notes:
 - **`tresto db list-tests|show|clear|info`**: Inspect and manage test data storage
 - **`tresto version`**: Show Tresto version
 
-Deprecated/changed:
+Default provider:
 
-- `.trestorc` → replaced with `tresto.yaml`
-- `tresto record` → use `tresto test create` and `tresto test iterate`
+- Tresto defaults to the OpenAI API provider with the Codex model `gpt-5.3-codex`.
+- Anthropic and non-Codex OpenAI models remain available by explicit `tresto.yaml` configuration.
 
 ## 🏗️ How it works
 

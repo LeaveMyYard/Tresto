@@ -18,7 +18,12 @@ console = Console()
 async def run_test(state: TestAgentState) -> TestAgentState:
     console.print(f"🔍 Running {state.test_file_path}...")
 
-    state.last_run_result = await run_test_code_in_file(state.test_file_path)
+    artifacts_dir = state.test_database.test_data_dir / "artifacts"
+    state.last_run_result = await run_test_code_in_file(
+        state.test_file_path,
+        config=state.config,
+        artifacts_dir=artifacts_dir,
+    )
 
     if state.last_run_result.success:
         console.print(f"✅ Successfully ran the test in {state.last_run_result.duration_s:.2f} seconds")

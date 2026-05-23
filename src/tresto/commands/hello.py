@@ -65,8 +65,8 @@ def hello_command() -> None:
     content.append("tresto models list", style="bold cyan")
     content.append("   # See available AI models\n", style="white")
     content.append("  3. ", style="white")
-    content.append("tresto record", style="bold cyan")
-    content.append("        # Record AI-powered tests\n\n", style="white")
+    content.append("tresto test create", style="bold cyan")
+    content.append("   # Create AI-powered tests\n\n", style="white")
 
     content.append("💡 Need help? Use ", style="white")
     content.append("tresto --help", style="bold cyan")

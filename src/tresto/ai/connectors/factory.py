@@ -20,10 +20,10 @@ console = Console()
 
 # Registry of available connectors
 CONNECTOR_REGISTRY: dict[str, type[AIConnector]] = {
-    "anthropic": AnthropicConnector,
-    "claude": AnthropicConnector,  # Alias
     "openai": OpenAIConnector,
     "gpt": OpenAIConnector,  # Alias
+    "anthropic": AnthropicConnector,
+    "claude": AnthropicConnector,  # Alias
     "test": TestConnector,
     "mock": TestConnector,  # Alias
 }
@@ -48,7 +48,10 @@ class ConnectorInformation(BaseModel):
 
 def get_available_connectors() -> Iterable[ConnectorInformation]:
     """Get information about all available AI connectors."""
-    connectors = set(CONNECTOR_REGISTRY.values())
+    connectors: list[type[AIConnector]] = []
+    for connector in CONNECTOR_REGISTRY.values():
+        if connector not in connectors:
+            connectors.append(connector)
 
     for connector in connectors:
         aliases = [name for name, cls in CONNECTOR_REGISTRY.items() if cls is connector]

@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 
 
 class TestChatModel(BaseChatModel):
@@ -36,4 +37,3 @@ class TestChatModel(BaseChatModel):
         generation = ChatGeneration(message=message)
 
         return ChatResult(generations=[generation])
-

@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-import os
 import stat
 import sys
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 def create_mock_playwright_script(python_executable: str, expected_output: str) -> str:
@@ -78,4 +80,3 @@ def mock_playwright(expected_output: str) -> Iterator[Path]:
         playwright_script.chmod(playwright_script.stat().st_mode | stat.S_IEXEC)
         
         yield bin_dir
-

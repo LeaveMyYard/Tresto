@@ -25,7 +25,7 @@ def test_tresto_version_shows_version(e2e_test_dir: Path) -> None:
     assert "tresto" in stdout_lower, f"Should mention Tresto. Got: {result.stdout}"
     
     assert re.search(r"v?\d+\.\d+\.\d+", result.stdout), \
-        f"Should show version number format (e.g., v0.3.1 or 0.3.1). Got: {result.stdout}"
+        f"Should show version number format (e.g., v1.0.0 or 1.0.0). Got: {result.stdout}"
 
 
 def test_tresto_version_flag(e2e_test_dir: Path) -> None:
@@ -58,4 +58,3 @@ def test_tresto_version_short_flag(e2e_test_dir: Path) -> None:
     assert "tresto" in stdout_lower, f"Should mention Tresto. Got: {result.stdout}"
     assert re.search(r"v?\d+\.\d+\.\d+", result.stdout), \
         f"Should show version number. Got: {result.stdout}"
-

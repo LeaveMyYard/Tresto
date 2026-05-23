@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 from tresto.ai.agent.tools.inspect.recording import RecordingManager
 
@@ -10,6 +11,9 @@ class TestRunResult:
     traceback: str | None = None
     stdout: str | None = None
     stderr: str | None = None
+    artifacts_dir: Path | None = None
+    screenshot_path: Path | None = None
+    trace_path: Path | None = None
 
     # Recording manager with time-based access to artifacts
     recording: RecordingManager | None = None

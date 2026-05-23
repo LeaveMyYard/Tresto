@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tresto-ai"
-version = "0.3.1"
+version = "1.0.0"
 description = "AI-powered E2E testing CLI inspired by Playwright codegen"
 readme = "README.md"
 license = "MIT"
@@ -16,10 +16,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Testing",
     "Topic :: Software Development :: Quality Assurance",
@@ -111,7 +107,7 @@ no_implicit_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 strict_equality = true
-exclude = ["tests"]
+exclude = ["tests", "tmp", "dist", "build"]
 explicit_package_bases = true
 mypy_path = "./src"
 

@@ -4,19 +4,14 @@ Welcome to the Tresto documentation! This directory contains comprehensive guide
 
 ## 📚 Table of Contents
 
-- [Getting Started](./getting-started.md) - Quick start guide
-- [Configuration](./configuration.md) - Configuration options and examples
-- [Recording Tests](./recording.md) - How to record and generate tests
-- [AI Agent](./ai-agent.md) - Understanding the AI test generation
 - [Contributing](./CONTRIBUTING.md) - How to contribute to Tresto
 - [Architecture](./architecture.md) - Technical architecture overview
-- [Troubleshooting](./troubleshooting.md) - Common issues and solutions
+- [Release](./release.md) - v1 release checklist
 
 ## 🚀 Quick Links
 
-- **New to Tresto?** Start with [Getting Started](./getting-started.md)
-- **Want to configure?** Check [Configuration](./configuration.md)
-- **Need help?** See [Troubleshooting](./troubleshooting.md)
+- **New to Tresto?** Start with the root [README](../README.md)
+- **Want to configure?** Run `tresto init` and edit `tresto.yaml`
 - **Want to contribute?** Read [Contributing](./CONTRIBUTING.md)
 
 ## 📖 External Resources

@@ -1,4 +1,4 @@
-"""Anthropic Claude connector using langchain."""
+"""OpenAI connector using langchain."""
 
 from __future__ import annotations
 
@@ -16,9 +16,9 @@ if TYPE_CHECKING:
 
 
 class OpenAIConnector(BaseAIConnector[ChatOpenAI, OpenAISettings]):
-    """OpenAI Cloud GPT-based models."""
+    """OpenAI API models, including GPT and Codex coding models."""
 
-    DEFAULT_MODEL: ClassVar[str] = "chatgpt-4-turbo"
+    DEFAULT_MODEL: ClassVar[str] = "gpt-5.3-codex"
 
     def _create_settings(self) -> OpenAISettings:
         return OpenAISettings()
@@ -35,6 +35,14 @@ class OpenAIConnector(BaseAIConnector[ChatOpenAI, OpenAISettings]):
 
     async def get_available_models(self) -> Sequence[str]:
         return [
+            "gpt-5.3-codex",
+            "gpt-5.2-codex",
+            "gpt-5.1-codex",
+            "gpt-5-codex",
+            "gpt-5.1",
+            "gpt-5",
+            "gpt-5-mini",
+            "gpt-5-nano",
             "gpt-3.5-turbo",
             "gpt-4",
             "gpt-4-turbo",

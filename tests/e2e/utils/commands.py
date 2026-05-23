@@ -33,15 +33,8 @@ def run_tresto_command(
     custom_path = (env or {}).get("PATH", "")
     system_path = os.environ.get("PATH", "")
     
-    full_env = {
-        **os.environ,
-    }
-    
-    if env:
-        for key, value in env.items():
-            if key != "PATH":
-                full_env[key] = value
-    
+    full_env = {**os.environ, **{key: value for key, value in (env or {}).items() if key != "PATH"}}
+
     full_env["PYTHONPATH"] = str(project_root / "src")
     full_env["PATH"] = f"{custom_path}{str(project_root / 'src')}:{system_path}"
 
@@ -69,4 +62,3 @@ def run_tresto_command(
         f.write(process.stderr)
 
     return process
-

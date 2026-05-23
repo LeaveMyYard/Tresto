@@ -89,7 +89,10 @@ class TestAgentState(BaseModel):
         )
 
     def add_message(self, message: BaseMessage | dict[str, Any]) -> None:
-        with open(self.config.project.test_directory / "debug.txt", "a") as f:
+        debug_dir = self.test_database.test_data_dir / "debug"
+        debug_dir.mkdir(parents=True, exist_ok=True)
+
+        with open(debug_dir / "debug.txt", "a") as f:
             f.write(f"{message}\n")
 
         if not isinstance(message, dict) and not message.content:
@@ -97,7 +100,7 @@ class TestAgentState(BaseModel):
 
         self.messages.append(message)
 
-        with open(self.config.project.test_directory / "state.yaml", "w") as f:
+        with open(debug_dir / "state.yaml", "w") as f:
             yaml.dump(self.model_dump(mode="json", exclude={"last_run_result"}), f, indent=2)
 
     @property

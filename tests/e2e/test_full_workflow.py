@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING
-
-import pytest
 
 from .utils import mock_playwright, run_tresto_command
 
 if TYPE_CHECKING:
-    pass
+    from pathlib import Path
 
 
 MOCK_PLAYWRIGHT_RECORDING = '''from playwright.async_api import Page
@@ -48,6 +45,7 @@ def test_full_workflow_with_mocked_playwright(e2e_test_dir: Path) -> None:
             env={"PATH": str(bin_dir) + ":"},
             timeout=30,
         )
+    assert result_create.returncode == 0, f"Create failed. Stderr: {result_create.stderr}"
 
     test_file = e2e_test_dir / "tresto" / "tests" / "login" / "test_success.py"
     recording_file = e2e_test_dir / "tresto" / "tests" / ".recordings" / "login" / "recording_success.py"
@@ -89,6 +87,7 @@ def test_full_workflow_generates_test_code(e2e_test_dir: Path) -> None:
             env={"PATH": str(bin_dir) + ":"},
             timeout=30,
         )
+    assert result_create.returncode == 0, f"Create failed. Stderr: {result_create.stderr}"
 
     test_file = e2e_test_dir / "tresto" / "tests" / "checkout" / "test_complete.py"
     assert test_file.exists(), f"Test file should be created. Stderr: {result_create.stderr}"
@@ -129,6 +128,7 @@ def test_workflow_with_nested_test_path(e2e_test_dir: Path) -> None:
             env={"PATH": str(bin_dir) + ":"},
             timeout=30,
         )
+    assert result_create.returncode == 0, f"Create failed. Stderr: {result_create.stderr}"
 
     test_file = e2e_test_dir / "tresto" / "tests" / "auth" / "api" / "oauth" / "test_google.py"
     assert test_file.exists(), f"Nested test file should be created at {test_file}"
@@ -140,4 +140,3 @@ def test_workflow_with_nested_test_path(e2e_test_dir: Path) -> None:
     content = test_file.read_text(encoding="utf-8")
     assert test_name in content
     assert test_description in content
-
