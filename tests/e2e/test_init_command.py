@@ -64,8 +64,8 @@ def test_tresto_init_with_defaults(e2e_test_dir: Path, monkeypatch: Any) -> None
     config_file = e2e_test_dir / "tresto.yaml"
     config_content = config_file.read_text(encoding="utf-8")
 
-    assert "connector: openai" in config_content
-    assert "gpt-5.3-codex" in config_content.lower()
+    assert "connector: codex" in config_content
+    assert "gpt-5.2-codex" in config_content.lower()
     assert "./tresto/tests" in config_content or "tresto/tests" in config_content
 
 

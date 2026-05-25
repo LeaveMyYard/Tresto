@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 
 import pytest
@@ -79,6 +80,9 @@ def test_scaffold_writer_creates_readme_and_placeholder_test(tmp_path: Path) -> 
     assert "Test name: auth.login" in content
     assert "@pytest.mark.skip" in content
     assert "TODO: Submit valid credentials" in content
+    assert "\nimport pytest\nfrom playwright.async_api import Page\n" in content
+    assert "    # TODO: Open the login page\n    # TODO: Submit valid credentials" in content
+    ast.parse(content)
 
 
 def test_scaffold_writer_refuses_hand_written_conflict_even_with_force(tmp_path: Path) -> None:
@@ -100,6 +104,33 @@ def test_scaffold_writer_replaces_generated_files_only_with_force(tmp_path: Path
 
     result = ScaffoldWriter(config=config, plan=_plan(), force=True).write(enable_db_cleanup=False)
     assert result.readme_path.exists()
+
+
+def test_scaffold_writer_force_removes_stale_generated_tests(tmp_path: Path) -> None:
+    config = _config(tmp_path)
+    ScaffoldWriter(config=config, plan=_plan()).write(enable_db_cleanup=False)
+    stale_file = tmp_path / "tresto" / "tests" / "auth" / "test_login.py"
+    assert stale_file.exists()
+
+    next_plan = ScaffoldPlan(
+        project_overview="A demo web application.",
+        detected_stack=[],
+        conventions=[],
+        planned_tests=[
+            PlannedTest(
+                test_name="checkout.pay",
+                title="Checkout succeeds",
+                description="Verify checkout.",
+                todo_steps=["Open checkout"],
+            )
+        ],
+        database_cleanup=DatabaseCleanupRecommendation(beneficial=False, rationale="No durable data."),
+    )
+
+    ScaffoldWriter(config=config, plan=next_plan, force=True).write(enable_db_cleanup=False)
+
+    assert not stale_file.exists()
+    assert (tmp_path / "tresto" / "tests" / "checkout" / "test_pay.py").exists()
 
 
 def test_scaffold_writer_adds_db_cleanup_hook_when_enabled(tmp_path: Path) -> None:

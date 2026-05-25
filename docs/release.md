@@ -20,4 +20,4 @@ tresto --help
 tresto models list
 ```
 
-For an end-to-end local smoke test, set `OPENAI_API_KEY`, run `tresto init` inside a sample web application, install Playwright browsers, and create a small test with `tresto test create --test-name smoke.homepage`.
+For an end-to-end local smoke test, run `codex login`, run `tresto init` inside a sample web application, install Playwright browsers, and create a small test with `tresto test create --test-name smoke.homepage`.

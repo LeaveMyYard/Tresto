@@ -17,7 +17,7 @@ Tresto is a Python CLI that turns a manually recorded browser flow into a pytest
 
 - CLI commands live under `tresto.commands` and expose `init`, `models`, `test`, `db`, and `version`.
 - Configuration is loaded from `tresto.yaml` by `TrestoConfig`.
-- The default AI provider is OpenAI API with `gpt-5.3-codex`; Anthropic remains available by explicit config.
+- The default AI provider is Codex browser auth with `gpt-5.2-codex`; OpenAI API and Anthropic remain available by explicit config.
 - Browser recording is delegated to `playwright codegen`.
 - Agent execution uses LangGraph with tools for code generation, test execution, trace inspection, and user questions.
 - Test metadata, agent debug state, and artifacts are stored under internal directories in the configured test root.
@@ -33,8 +33,8 @@ project:
   test_directory: ./tresto/tests
 
 ai:
-  connector: openai
-  model: gpt-5.3-codex
+  connector: codex
+  model: gpt-5.2-codex
 
 browser:
   headless: true
@@ -49,4 +49,4 @@ recording:
   generate_selectors: auto
 ```
 
-`OPENAI_API_KEY` configures the default provider. The `secrets` list in `tresto.yaml` is reserved for application secrets that generated tests may read through `tresto.secrets`.
+`connector: codex` reads the local `~/.codex/auth.json` access token created by `codex login`, extracts the ChatGPT account id, and calls the ChatGPT Codex backend. `connector: openai` configures the OpenAI Platform API with `OPENAI_API_KEY`; ChatGPT browser tokens usually do not have OpenAI API scopes. Pasted OpenAI API keys can be stored in `~/.tresto/credentials` with owner-only permissions. When `OPENAI_OIDC_ISSUER_URL` and `OPENAI_OIDC_CLIENT_ID` are configured for the OpenAI provider, Tresto first runs a browser-based OIDC authorization-code flow with PKCE, stores the resulting token metadata in `~/.tresto/credentials`, and exposes the access token to the provider process as `OPENAI_API_KEY`. The `secrets` list in `tresto.yaml` is reserved for application secrets that generated tests may read through `tresto.secrets`.

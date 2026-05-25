@@ -80,8 +80,10 @@ tresto test run
 
 - Python 3.13+
 - Playwright browsers (`playwright install`)
-- API key(s) for your selected AI provider(s)
-  - For the default OpenAI provider set `OPENAI_API_KEY`
+- Browser auth or API key(s) for your selected AI provider(s)
+  - For the default Codex provider, run `codex login`
+  - For the OpenAI API provider, set `OPENAI_API_KEY`
+  - Alternatively, configure an OIDC issuer with `OPENAI_OIDC_ISSUER_URL` and `OPENAI_OIDC_CLIENT_ID`
 
 ## 🛠️ Configuration (tresto.yaml)
 
@@ -94,8 +96,8 @@ project:
   test_directory: ./tresto/tests
 
 ai:
-  connector: openai
-  model: gpt-5.3-codex
+  connector: codex
+  model: gpt-5.2-codex
   max_iterations: 5
   temperature: 0.1
 
@@ -118,7 +120,10 @@ secrets:
 
 Notes:
 
-- `OPENAI_API_KEY` configures the default model provider. Do not add it to `secrets`.
+- `connector: codex` uses browser auth from `~/.codex/auth.json`, created by `codex login`, and calls the ChatGPT Codex backend.
+- `connector: openai` uses the OpenAI Platform API through `OPENAI_API_KEY`; ChatGPT/Codex browser tokens usually do not have those API scopes.
+- Pasted OpenAI API keys can be stored in the user-level `~/.tresto/credentials` file with owner-only permissions.
+- If `OPENAI_OIDC_ISSUER_URL` and `OPENAI_OIDC_CLIENT_ID` are set, Tresto uses a browser-based OIDC authorization-code flow with PKCE before falling back to API-key prompting. Optional OIDC settings are `OPENAI_OIDC_CLIENT_SECRET`, `OPENAI_OIDC_SCOPES`, `OPENAI_OIDC_AUDIENCE`, `OPENAI_OIDC_RESOURCE`, `OPENAI_OIDC_REDIRECT_HOST`, `OPENAI_OIDC_REDIRECT_PORT`, and `OPENAI_OIDC_TIMEOUT_SECONDS`.
 - `secrets` is a list of application/test secret environment variable names exposed to generated tests through `tresto.secrets`.
 - `connector` and `model` must be one of the values exposed by `tresto models list`.
 
@@ -139,8 +144,9 @@ Notes:
 
 Default provider:
 
-- Tresto defaults to the OpenAI API provider with the Codex model `gpt-5.3-codex`.
-- Anthropic and non-Codex OpenAI models remain available by explicit `tresto.yaml` configuration.
+- Tresto defaults to the Codex browser-auth provider with the model `gpt-5.2-codex`.
+- OpenAI Platform API models remain available with `connector: openai` and `OPENAI_API_KEY`.
+- Anthropic remains available by explicit `tresto.yaml` configuration.
 
 ## 🏗️ How it works
 

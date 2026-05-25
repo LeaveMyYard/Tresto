@@ -2,17 +2,21 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
+from langchain.chat_models import init_chat_model
 from pydantic import BaseModel
 from rich.console import Console
 
 from .anthropic.connector import AnthropicConnector
+from .codex.connector import CodexConnector
 from .openai.connector import OpenAIConnector
 from .test.connector import TestConnector
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+
+    from langchain_core.language_models.chat_models import BaseChatModel
 
     from .base import AIConnector
 
@@ -22,6 +26,8 @@ console = Console()
 CONNECTOR_REGISTRY: dict[str, type[AIConnector]] = {
     "openai": OpenAIConnector,
     "gpt": OpenAIConnector,  # Alias
+    "codex": CodexConnector,
+    "chatgpt": CodexConnector,  # Alias
     "anthropic": AnthropicConnector,
     "claude": AnthropicConnector,  # Alias
     "test": TestConnector,
@@ -38,6 +44,15 @@ def connect(connector_name: str, model_name: str | None = None) -> AIConnector:
         raise KeyError(f"Unknown connector: {connector_name}")
 
     return connector_class(model_name=model_name)
+
+
+def init_tresto_chat_model(connector_name: str, model_name: str, **kwargs: Any) -> BaseChatModel:
+    """Create a LangChain chat model using Tresto connectors when available."""
+
+    connector_class = CONNECTOR_REGISTRY.get(connector_name.lower())
+    if connector_class is None:
+        return init_chat_model(f"{connector_name}:{model_name}", **kwargs)
+    return connector_class(model_name=model_name, **kwargs).client
 
 
 class ConnectorInformation(BaseModel):

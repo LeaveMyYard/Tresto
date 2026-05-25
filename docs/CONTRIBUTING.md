@@ -33,9 +33,9 @@ Thank you for your interest in contributing to Tresto! We welcome contributions 
    uv run pre-commit install
    ```
 
-5. **Set up environment variables**
+5. **Set up model credentials**
    ```bash
-   export OPENAI_API_KEY=your_api_key_here
+   codex login
    ```
 
 ## 🧪 Running Tests

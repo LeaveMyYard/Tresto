@@ -37,8 +37,8 @@ def test_tresto_init_creates_config_and_boilerplate(tmp_path: Path, monkeypatch:
 
     content = config_path.read_text(encoding="utf-8")
     # Connector and default model should be saved
-    assert "connector: openai" in content
-    assert "model: gpt-5.3-codex" in content
+    assert "connector: codex" in content
+    assert "model: gpt-5.2-codex" in content
 
     # Boilerplate copied into default test directory
     tests_dir = tmp_path / "tresto" / "tests"

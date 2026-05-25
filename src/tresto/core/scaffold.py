@@ -5,13 +5,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
 
-from langchain.chat_models import init_chat_model
 from langchain_core.messages import HumanMessage, SystemMessage
+from openai import AuthenticationError as OpenAIAuthenticationError
 from pydantic import BaseModel, Field, field_validator
 
 from tresto import __version__
+from tresto.ai.connectors import init_tresto_chat_model
 from tresto.core.file_header import FileHeader
 from tresto.core.pathfinder import TrestoPathFinder
+from tresto.utils.credentials import CredentialError, ensure_provider_credentials, refresh_provider_credentials
 
 if TYPE_CHECKING:
     from tresto.core.config.main import TrestoConfig
@@ -215,6 +217,8 @@ class ScaffoldWriter:
         self.workspace_root.mkdir(parents=True, exist_ok=True)
         self.test_root.mkdir(parents=True, exist_ok=True)
         self._check_existing(enable_db_cleanup)
+        if self.force:
+            self._remove_stale_generated_tests()
 
         readme_path = self.workspace_root / "README.md"
         readme_path.write_text(self._render_readme(enable_db_cleanup), encoding="utf-8")
@@ -272,6 +276,17 @@ class ScaffoldWriter:
     def _is_scaffold_file(self, path: Path) -> bool:
         return path.exists() and self.SCAFFOLD_MARKER in path.read_text(encoding="utf-8", errors="ignore")
 
+    def _remove_stale_generated_tests(self) -> None:
+        planned_paths = {
+            TrestoPathFinder(config=self.config, test_name=planned_test.test_name).test_file_path.resolve()
+            for planned_test in self.plan.planned_tests
+        }
+        for path in self.test_root.rglob("test_*.py"):
+            if path.resolve() in planned_paths:
+                continue
+            if self._is_scaffold_file(path):
+                path.unlink()
+
     def _render_readme(self, enable_db_cleanup: bool) -> str:
         planned_rows = "\n".join(
             f"| `{test.test_name}` | `{TrestoPathFinder(config=self.config, test_name=test.test_name).test_file_path}` "
@@ -308,9 +323,9 @@ class ScaffoldWriter:
         return f"### {test.test_name}\n\n{test.description}\n\nTODO:\n{todos}"
 
     def _render_placeholder_test(self, test: PlannedTest) -> str:
-        steps = "\n".join(f"    # TODO: {step}" for step in test.todo_steps) or "    # TODO: Define scenario steps"
+        steps = "\n".join(f"# TODO: {step}" for step in test.todo_steps) or "# TODO: Define scenario steps"
         function_name = "test_" + TrestoPathFinder.split_test_path(test.test_name)[-1]
-        return textwrap.dedent(
+        body = textwrap.dedent(
             f'''\
             # {self.SCAFFOLD_MARKER} v{__version__}
 
@@ -324,9 +339,9 @@ class ScaffoldWriter:
 
                 {test.description}
                 """
-            {steps}
             '''
         )
+        return body + textwrap.indent(steps, "    ") + "\n"
 
     def _ensure_init_files(self, relative_parent: Path) -> None:
         current_path = relative_parent
@@ -374,27 +389,47 @@ class ScaffoldWriter:
 
 
 async def generate_scaffold_plan(config: TrestoConfig, snapshot: CodebaseSnapshot) -> ScaffoldPlan:
+    ensure_provider_credentials(config.ai.connector)
     options = config.ai.options or {}
-    llm = init_chat_model(
-        f"{config.ai.connector}:{config.ai.model}",
+    llm = init_tresto_chat_model(
+        config.ai.connector,
+        config.ai.model,
         max_tokens=config.ai.max_tokens,
         temperature=config.ai.temperature,
         max_retries=3,
         **options,
     )
     structured_llm = llm.with_structured_output(ScaffoldPlan)
-    result = await structured_llm.ainvoke(
-        [
-            SystemMessage(
-                content=(
-                    "You are Tresto scaffold. Plan a thorough pytest + Playwright E2E test suite. "
-                    "Do not write executable test logic. Produce a structured plan and placeholder test inventory. "
-                    "Recommend application database cleanup only if tests would benefit from isolated data."
-                )
-            ),
-            HumanMessage(content=snapshot.to_prompt()),
-        ]
-    )
+    messages = [
+        SystemMessage(
+            content=(
+                "You are Tresto scaffold. Plan a thorough pytest + Playwright E2E test suite. "
+                "Do not write executable test logic. Produce a structured plan and placeholder test inventory. "
+                "Recommend application database cleanup only if tests would benefit from isolated data."
+            )
+        ),
+        HumanMessage(content=snapshot.to_prompt()),
+    ]
+    try:
+        result = await structured_llm.ainvoke(messages)
+    except OpenAIAuthenticationError:
+        try:
+            refresh_provider_credentials(
+                config.ai.connector,
+                "OpenAI rejected the stored credentials. Paste a fresh API key to continue.",
+            )
+        except CredentialError as e:
+            raise CredentialError(str(e)) from None
+        llm = init_tresto_chat_model(
+            config.ai.connector,
+            config.ai.model,
+            max_tokens=config.ai.max_tokens,
+            temperature=config.ai.temperature,
+            max_retries=3,
+            **options,
+        )
+        structured_llm = llm.with_structured_output(ScaffoldPlan)
+        result = await structured_llm.ainvoke(messages)
     if not isinstance(result, ScaffoldPlan):
         raise TypeError("Model did not return a ScaffoldPlan")
     return result

@@ -14,6 +14,7 @@ from tresto.core.scaffold import (
     ScaffoldWriter,
     generate_scaffold_plan,
 )
+from tresto.utils.credentials import CredentialError
 
 console = Console()
 
@@ -54,7 +55,11 @@ async def _scaffold_command(force: bool, yes_db_cleanup: bool, no_db_cleanup: bo
     snapshot = CodebaseSnapshotBuilder(Path.cwd(), config.project.test_directory).build(max_files=max_files)
     console.print(f"📁 Scanned project snapshot with {len(snapshot.files)} selected files")
 
-    plan = await generate_scaffold_plan(config, snapshot)
+    try:
+        plan = await generate_scaffold_plan(config, snapshot)
+    except CredentialError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1) from e
     enable_cleanup = _resolve_db_cleanup(plan.database_cleanup.beneficial, yes_db_cleanup, no_db_cleanup)
 
     writer = ScaffoldWriter(config=config, plan=plan, force=force)

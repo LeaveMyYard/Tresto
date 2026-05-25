@@ -3,19 +3,20 @@ from __future__ import annotations
 from contextlib import contextmanager
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import yaml
-from langchain.chat_models import init_chat_model
 from langchain_core.messages import BaseMessage, HumanMessage
 from pydantic import BaseModel, ConfigDict
 
 from tresto import __version__
 from tresto.ai.agent.agent import Agent
+from tresto.ai.connectors import init_tresto_chat_model
 from tresto.core.config.main import TrestoConfig
 from tresto.core.database import TestDatabase
 from tresto.core.file_header import FileHeader, TrestoFileHeaderCorrupted
 from tresto.core.test import TestRunResult
+from tresto.utils.credentials import ensure_provider_credentials
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -110,15 +111,18 @@ class TestAgentState(BaseModel):
 
     def create_llm(self: TestAgentState, tools: list[BaseTool] | None = None) -> BaseChatModel:
         # Make it possible to pass custom options to the LLM
+        ensure_provider_credentials(self.config.ai.connector)
         options = self.config.ai.options or {}
 
-        return init_chat_model(
-            f"{self.config.ai.connector}:{self.config.ai.model}",
+        llm = init_tresto_chat_model(
+            self.config.ai.connector,
+            self.config.ai.model,
             max_tokens=self.config.ai.max_tokens,
             temperature=self.config.ai.temperature,
             max_retries=3,
             **options,
         ).bind_tools(tools or [])
+        return cast("BaseChatModel", llm)
 
     @property
     def all_messages(self) -> list[BaseMessage | dict[str, Any]]:

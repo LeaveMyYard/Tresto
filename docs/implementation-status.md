@@ -14,8 +14,8 @@ Tresto v1 focuses on the core local workflow:
 
 - Typer CLI with Rich terminal output.
 - `tresto.yaml` configuration.
-- OpenAI API default provider using the Codex model `gpt-5.3-codex`.
-- Secondary Anthropic and test/mock connectors.
+- Codex browser-auth default provider using the ChatGPT Codex backend and `gpt-5.2-codex`.
+- Secondary OpenAI API, Anthropic, and test/mock connectors.
 - Playwright codegen recording.
 - Project-wide scaffold planning with README, placeholder tests, and optional app database cleanup hooks.
 - LangGraph agent loop for generation, test execution, inspection, and user input.

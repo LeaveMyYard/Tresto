@@ -42,7 +42,7 @@ async def _init_command(force: bool) -> None:
     all_connectors = [alias for c in get_available_connectors() for alias in c.aliases]
     selected_connector_name = Prompt.ask(
         "AI provider",
-        default="openai",
+        default="codex",
         choices=all_connectors,
     )
 
@@ -88,7 +88,7 @@ async def _init_command(force: bool) -> None:
     console.print(f"⚙️  Created configuration: [bold]{config_path.relative_to(Path.cwd())}[/bold]")
 
     console.print("\n[bold]Next steps:[/bold]")
-    console.print("1. Set your [bold]OPENAI_API_KEY[/bold] environment variable")
+    console.print("1. Run [bold]codex login[/bold] if Codex browser auth is not already configured")
     console.print("2. Install Playwright browsers: [bold]playwright install[/bold]")
     console.print("3. Run [bold]tresto test create[/bold] to create your first AI-powered test")
 
