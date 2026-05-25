@@ -66,6 +66,9 @@ playwright install
 # Open interactive AI-driven flow to create a test
 tresto test create --test-name login.success   # optional name
 
+# Plan a project-wide test structure without writing real test logic
+tresto scaffold
+
 # Iterate on an existing test with the agent
 tresto test iterate --test-name login.success
 
@@ -124,6 +127,8 @@ Notes:
 - **`tresto`**: Shows a welcome panel and quick tips
 - **`tresto init`**: Interactive setup; creates `tresto.yaml` and scaffolds tests
   - Options: `--force`
+- **`tresto scaffold`**: Scan the codebase, plan an E2E test structure, create `tresto/README.md`, and write skipped placeholder test files
+  - Options: `--force`, `--yes-db-cleanup`, `--no-db-cleanup`, `--max-files <n>`
 - **`tresto models list`**: List available AI connectors and their models
 - **`tresto test`**: Alias for running tests (equivalent to `tresto test run`)
 - **`tresto test run [PYTEST_ARGS...]`**: Run tests via pytest, forwards extra args

@@ -11,6 +11,8 @@ Tresto is a Python CLI that turns a manually recorded browser flow into a pytest
 5. The LangGraph agent generates or updates the test file.
 6. The agent runs the test, captures a Playwright trace and screenshot artifacts, inspects the trace when needed, and iterates until the test passes or it needs user input.
 
+`tresto scaffold` is a separate planning-only flow. It scans the codebase, asks the model for a structured E2E test plan, writes `tresto/README.md`, creates skipped placeholder test files, and optionally scaffolds an app database cleanup pytest hook after user approval.
+
 ## Components
 
 - CLI commands live under `tresto.commands` and expose `init`, `models`, `test`, `db`, and `version`.

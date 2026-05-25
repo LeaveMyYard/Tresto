@@ -3,6 +3,7 @@
 Tresto v1 focuses on the core local workflow:
 
 - initialize a project with `tresto init`
+- plan a project-wide test suite with `tresto scaffold`
 - list model providers with `tresto models list`
 - create tests with `tresto test create`
 - iterate tests with `tresto test iterate`
@@ -16,6 +17,7 @@ Tresto v1 focuses on the core local workflow:
 - OpenAI API default provider using the Codex model `gpt-5.3-codex`.
 - Secondary Anthropic and test/mock connectors.
 - Playwright codegen recording.
+- Project-wide scaffold planning with README, placeholder tests, and optional app database cleanup hooks.
 - LangGraph agent loop for generation, test execution, inspection, and user input.
 - Pytest + Playwright boilerplate generation.
 - Per-test storage for metadata and agent artifacts.

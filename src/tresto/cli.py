@@ -9,6 +9,7 @@ from .commands import test as test_commands
 from .commands.db import app as db_app
 from .commands.hello import hello_command
 from .commands.init import init_command
+from .commands.scaffold import scaffold_command
 from .commands.version import version_command
 
 console = Console()
@@ -55,6 +56,7 @@ def main(
 def register_commands() -> None:
     """Register CLI commands."""
     app.command("init", help="Initialize Tresto in your project")(init_command)
+    app.command("scaffold", help="Plan and scaffold a project-wide E2E test structure")(scaffold_command)
     app.add_typer(models.app, name="models")
     app.add_typer(test_commands.app, name="test")
     app.add_typer(db_app, name="db")
