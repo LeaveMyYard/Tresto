@@ -3,6 +3,7 @@
 import typer
 
 from . import create as create_module
+from .implement import implement_scaffold_command
 from .iterate import iterate_test_command
 from .run import run_tests_command
 
@@ -22,6 +23,7 @@ def _default(ctx: typer.Context) -> None:
 
 
 app.command("create", help="Create a new test scaffold")(create_module.create_test_command)
+app.command("implement", help="Implement scaffold-generated tests one by one")(implement_scaffold_command)
 
 
 def _run_entry(ctx: typer.Context) -> None:

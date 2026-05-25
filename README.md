@@ -139,6 +139,7 @@ Notes:
 - **`tresto test run [PYTEST_ARGS...]`**: Run tests via pytest, forwards extra args
 - **`tresto test create [--test-name <name>]`**: Start agent to create a test
 - **`tresto test iterate [--test-name <name>]`**: Iterate on a test with the agent
+- **`tresto test implement`**: Walk scaffold-generated placeholder tests one by one and prompt whether to record/skip/quit
 - **`tresto db list-tests|show|clear|info`**: Inspect and manage test data storage
 - **`tresto version`**: Show Tresto version
 
