@@ -140,8 +140,35 @@ Notes:
 - **`tresto test create [--test-name <name>]`**: Start agent to create a test
 - **`tresto test iterate [--test-name <name>]`**: Iterate on a test with the agent
 - **`tresto test implement`**: Walk scaffold-generated placeholder tests one by one and prompt whether to record/skip/quit
+- **`tresto mcp`** or **`tresto-mcp`**: Run the Tresto MCP server over stdio for external agents
 - **`tresto db list-tests|show|clear|info`**: Inspect and manage test data storage
 - **`tresto version`**: Show Tresto version
+
+## 🔌 MCP Server
+
+Tresto includes an MCP server so another local agent can operate your test suite with structured tools. The intended flow is still human-in-the-loop: the agent asks Tresto to launch Playwright codegen, you manually perform the browser flow, and the agent uses the saved recording as the base for the test implementation.
+
+Example MCP client configuration:
+
+```json
+{
+  "mcpServers": {
+    "tresto": {
+      "command": "tresto-mcp"
+    }
+  }
+}
+```
+
+Available tools include:
+
+- `tresto_status`: read project/config status
+- `tresto_list_tests`: list Tresto tests, optionally only scaffold placeholders
+- `tresto_record_flow`: launch Playwright codegen for a test and save the manual recording
+- `tresto_read_test_context`: read test code, header metadata, and recording code
+- `tresto_write_test_code`: write generated test code while preserving the Tresto header
+- `tresto_run_tests`: run pytest for all tests or one Tresto test
+- `tresto_run_cli`: fallback wrapper for Tresto CLI operations not covered by typed tools
 
 Default provider:
 

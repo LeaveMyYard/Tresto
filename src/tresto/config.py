@@ -1,27 +1,49 @@
-"""A bunch of utilities for runtime pytest execution."""
+"""Lazy access to Tresto configuration for runtime pytest execution."""
+
+from __future__ import annotations
 
 from typing import Any
 
-from rich.console import Console
+from pydantic import ConfigDict
 
-from tresto.core.config.main import ConfigLoadingError, TrestoConfig
+from tresto.core.config.main import TrestoConfig
 
-console = Console()
 
-try:
-    __base_config = TrestoConfig.load_config()
-except ConfigLoadingError:
-    # If config is not loaded, we need to raise an error at runtime, not at import time
-    # This ensures that commands are not failing, for example during `tresto init`
-    class RuntimeFailingConfig:
-        def __getattribute__(self, name: str) -> Any:
-            raise ConfigLoadingError("Could not load configuration.")
+class LazyConfig:
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    config: TrestoConfig | RuntimeFailingConfig = RuntimeFailingConfig()
-    secrets: dict[str, str] | RuntimeFailingConfig = RuntimeFailingConfig()
-else:
-    config = __base_config
-    secrets = __base_config.get_secrets()
+    def _load(self) -> TrestoConfig:
+        return TrestoConfig.load_config()
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._load(), name)
+
+    def get_secrets(self) -> dict[str, str]:
+        return self._load().get_secrets()
+
+
+class LazySecrets:
+    def _load(self) -> dict[str, str]:
+        return TrestoConfig.load_config().get_secrets()
+
+    def __getitem__(self, key: str) -> str:
+        return self._load()[key]
+
+    def get(self, key: str, default: str | None = None) -> str | None:
+        return self._load().get(key, default)
+
+    def items(self) -> Any:
+        return self._load().items()
+
+    def __iter__(self) -> Any:
+        return iter(self._load())
+
+    def __len__(self) -> int:
+        return len(self._load())
+
+
+config = LazyConfig()
+secrets = LazySecrets()
 
 
 __all__ = ["config", "secrets"]

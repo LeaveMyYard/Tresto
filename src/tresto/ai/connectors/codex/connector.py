@@ -28,8 +28,8 @@ class CodexConnector(BaseAIConnector[CodexChatModel, CodexSettings]):
 
     async def get_available_models(self) -> Sequence[str]:
         return [
-            "gpt-5.3-codex",
             "gpt-5.2-codex",
+            "gpt-5.3-codex",
             "gpt-5.1-codex-max",
             "gpt-5.1-codex",
             "gpt-5.1-codex-mini",
